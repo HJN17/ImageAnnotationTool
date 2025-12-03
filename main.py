@@ -3,8 +3,8 @@ import os
 import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
-
-from QtUniversalToolFrameWork.common.config import qconfig  # 从应用公共配置模块导入cfg（配置管理对象）
+from enum import Enum
+from QtUniversalToolFrameWork.common.config import qconfig
 from view.main_window import mWindow
 
 if qconfig.get(qconfig.dpiScale) == "Auto":
@@ -22,3 +22,5 @@ app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)  # 设置属性：不创�
 w = mWindow()
 w.show()
 app.exec_()
+
+
