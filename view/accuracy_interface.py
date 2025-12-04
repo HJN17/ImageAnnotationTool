@@ -2,416 +2,107 @@ import os
 from natsort import natsorted
 import shutil
 import json
+from PyQt5.QtCore import Qt, QPoint, QPointF, QEvent, QSettings,QRegExp
+from PyQt5.QtGui import QPolygonF,QColor
 from PyQt5.QtWidgets import (QWidget, QLabel, QPushButton, QLineEdit, QHBoxLayout, QVBoxLayout, 
-                           QGroupBox, QFileDialog, QMessageBox, QTreeWidget, QTreeWidgetItem, 
-                           QAbstractItemView,QApplication, QStyledItemDelegate, QStyleOptionViewItem,
-                           QStyle,QTextBrowser,QDialog,QSpinBox)
+                           QGroupBox, QFileDialog, QMessageBox,QTextBrowser,QDialog)
+
+from QtUniversalToolFrameWork.common.image_utils import ImageManager
+from QtUniversalToolFrameWork.common.icon import Action,FluentIcon as FIF
+from QtUniversalToolFrameWork.components.widgets.image_canvas import ImageProgressWidget
+from QtUniversalToolFrameWork.components.widgets.label import CommandBarLabel
+from QtUniversalToolFrameWork.components.widgets.command_bar import CommandBar
 
 from common.utils import Utils
-from common.base_components1 import ImageCanvas
+from components.image_canvas import PolygonsDrawImageCanvas
 
-
-
-from PyQt5.QtCore import Qt, QPoint, QPointF, QEvent, QSettings,QRegExp
-
-
-from PyQt5.QtGui import QPolygonF, QFont, QPalette, QColor, QIcon,QRegExpValidator
-
-
-from PyQt5.QtCore import pyqtSignal
-
-
-class JsonCharsetInfo:
-    def __init__(self, poly : list[QPointF], text : str, confidence : float):
-        self._poly = poly
-        self._text = text
-        self._confidence = confidence
-        
-    def __str__(self):
-        return f"JsonCharsetInfo(poly={self.poly}, text={self.text}, confidence={self.confidence})"
-    
-    @property
-    def poly(self):
-        """获取字符集多边形"""
-        return self._poly
-
-    @property
-    def text(self):
-        """获取字符集文本"""
-        return self._text
-    
-    @property
-    def confidence(self):
-        """获取字符集置信度"""
-        return self._confidence
-    
-    @poly.setter
-    def poly(self, value: list[QPointF]):
-        self._poly = value
-    
-    @text.setter
-    def text(self, value: str):
-        self._text = value
-    
-    @confidence.setter
-    def confidence(self, value: float):
-        self._confidence = value
-    
-        
-class JsonDataListInfo:
-    def __init__(self, id : str, text : str, language : str, poly : list[QPointF], charsets : list[JsonCharsetInfo]):
-        self._id = id
-        self._text = text
-        self._poly = poly
-        self._language = language
-        self._charsets = charsets
-
-    def __str__(self):
-        return f"JsonDataListInfo(id={self.id}, text={self.text}, language={self.language}, poly={self.poly}, charsets={self.charsets})"
-        
-    @property
-    def id(self):
-        """获取数据项ID"""
-        return self._id
-    
-    @property
-    def text(self):
-        """获取数据项文本"""
-        return self._text
-    
-    @property
-    def poly(self):
-        """获取数据项多边形"""
-        return self._poly
-    
-    @property
-    def language(self):
-        """获取数据项语言"""
-        return self._language
-    @property
-    def charsets(self):
-        """获取所有字符集数据"""
-        return self._charsets
-    
-    @text.setter
-    def text(self, value: str):
-        self._text = value
-    
-    @language.setter
-    def language(self, value: str):
-        self._language = value
-    
-    @charsets.setter
-    def charsets(self, value: list[JsonCharsetInfo]):
-        self._charsets = value
-    
-    def add_charset(self, charset: JsonCharsetInfo):
-        self._charsets.append(charset)
-    
-    def remove_charset(self, index: int):
-        if 0 <= index < len(self._charsets):
-            del self._charsets[index]
-
-class JsonDataList:
-    def __init__(self, FilePath : str, Source: str, data_list : list[JsonDataListInfo]):
-        self._FilePath = FilePath
-        self._Source = Source
-        self._data_list = data_list
-
-    @property
-    def data_list(self):
-        """获取所有多边形数据"""
-        return self._data_list
-    
-    @property
-    def charsets_poly_list(self):
-        """获取所有字符集数据"""
-        poly_charsets_list = []
-        for data in self._data_list:
-            for charsets in data.charsets:
-                poly_charsets_list.append(charsets.poly)
-        return poly_charsets_list
-    
-    @property
-    def all_charsets(self):
-        """获取所有Charset对象（扁平化）"""
-        all_chars = []
-        for data in self._data_list:
-            all_chars.extend(data.charsets)
-        return all_chars
-    
-    @property
-    def all_data_list_info(self):
-        """获取所有JsonDataListInfo对象"""
-        return self._data_list
-    
-    def get_charset_by_index(self, charset_index: int):
-        """通过索引获取对应的Charset对象和其所属的JsonDataListInfo"""
-        all_chars = self.all_charsets
-        if 0 <= charset_index < len(all_chars):
-            charset = all_chars[charset_index]
-            # 找到所属的JsonDataListInfo
-            for data_info in self.data_list:
-                if charset in data_info.charsets:
-                    data_index = self.data_list.index(data_info)
-                    charset_subindex = data_info.charsets.index(charset)
-                    return data_info, data_index, charset_subindex # 返回所属的JsonDataListInfo对象、数据项索引、字符集索引
-        return None, -1, -1
-    
-    def add_data_list_info(self, data_info: JsonDataListInfo):
-        self._data_list.append(data_info)
-    
-    def remove_data_list_info(self, index: int):
-        if 0 <= index < len(self._data_list):
-            del self._data_list[index]
-
-class OCRAccuracyTool(QWidget):
-
+class OCRAccuracyInterface(QWidget):
     """OCR精度调整工具模块，用于调整OCR识别区域的多边形标注"""
 
-    status_updated = pyqtSignal(str, str)
-    name_updated = pyqtSignal(str)
-    count_updated = pyqtSignal(int, int)
-    scale_updated = pyqtSignal(float)  # 缩放比例更新信号
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.settings = QSettings("AnnotationTool", "OCRAccuracyTool")
-        self.file_pairs = [] # 存储图像和 JSON 文件对的列表
-        self.current_index = -1  # 当前文件的索引，初始值为 -1 表示未选中
-        self.shift_pressed = False # 标记Shift键是否被按下
-        self.n_pressed = False # 标记N键是否被按下
-        self.show_polygons = True  # 默认显示多边形
-
         self.setObjectName("ocr_accuracy_interface")
 
+        self._progress_widget = ImageProgressWidget(self)
+        self._image_manager = ImageManager(self)
+        self._image_canvas = PolygonsDrawImageCanvas(self)
+        self._image_name_label = CommandBarLabel(self)
+        self._commandBar = self.createCommandBar()
+        
+        self._current_dir = ""
+
+        self._shift_pressed = False
+        self._n_pressed = False
+        self._show_polygons = True  # 默认显示多边形
+
+        
         self.init_ui()
         self.init_vars()
 
     def init_vars(self):
         """初始化变量（适配新层级）"""
-        self.JsonDataList = None  # 根数据对象
-        self.creating_poly = False
+        self._data_info = None  # 根数据对象
+        self._current_data_index = -1  # 当前选中的DataInfo索引
+
+        self.creating_poly = False 
         self.current_poly = []
-        self.selected_charset_index = -1  # 选中的Charset索引（扁平化索引）
-        self.selected_vertex = -1
+
+        self.selected_vertex = -1 # 选中的顶点索引（扁平化索引）
+
         self.dragging_vertex = False
         self.dragging_poly = False
         self.drag_start_pos = QPointF()
+
         self.poly_original_pos = []
         self.poly_colors = []  # 每个Charset的颜色
-
-        # 清空UI输入
-        self.vertex_idx.clear()
-        self.vertex_x.clear()
-        self.vertex_y.clear()
-        self.poly_id.clear()
-        self.poly_text.clear()
-        self.poly_lang.clear()
-
 
 
     def init_ui(self):
         """初始化UI"""
-        main_layout = QHBoxLayout(self)
-        control_panel = QWidget()
-        control_layout = QVBoxLayout(control_panel)
-        control_panel.setFixedWidth(400)
-        
-        dir_group = QGroupBox("文件夹设置")
-        dir_layout = QVBoxLayout()
+        vBoxLayout = QVBoxLayout(self)
+        vBoxLayout.setContentsMargins(10, 10, 10, 10)
+        vBoxLayout.setAlignment(Qt.AlignTop) 
 
-        # 图片路径
-        img_dir_layout = QHBoxLayout()
-        image_label = QLabel("图片文件路径:")
-        image_label.setFixedWidth(80)
-        self.images_dir = QLineEdit()
-        self.images_dir.setText(self.settings.value("ocr_accuracy_tool_images_dir", ""))
-        img_browse_btn = QPushButton("浏览")
-        img_browse_btn.clicked.connect(self.browse_images_dir)
-        img_dir_layout.addWidget(image_label)
-        img_dir_layout.addWidget(self.images_dir)
-        img_dir_layout.addWidget(img_browse_btn)
+        self._image_name_label.setContentsMargins(20, 0, 0, 0)
 
+        vBoxLayout.addWidget(self._commandBar,0,Qt.AlignHCenter)
+        vBoxLayout.setSpacing(10)
+        vBoxLayout.addWidget(self._image_canvas,1)
+        vBoxLayout.addWidget(self._image_name_label,0,Qt.AlignLeft)
 
-        
-        # JSON路径
-        json_dir_layout = QHBoxLayout()
-        json_label = QLabel("JSON文件路径:")
-        json_label.setFixedWidth(80)
-        self.jsons_dir = QLineEdit()
-        self.jsons_dir.setText(self.settings.value("ocr_accuracy_tool_jsons_dir", ""))
-        json_browse_btn = QPushButton("浏览")
-        json_browse_btn.clicked.connect(self.browse_jsons_dir)
-        json_dir_layout.addWidget(json_label)
-        json_dir_layout.addWidget(self.jsons_dir)
-        json_dir_layout.addWidget(json_browse_btn)
-        
+    def createCommandBar(self):
+            bar = CommandBar(self)
+            bar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
 
-        match_btn = QPushButton("匹配文件对")
-        match_btn.clicked.connect(self.match_file_pairs)
-        
-        dir_layout.addLayout(img_dir_layout)
-        dir_layout.addLayout(json_dir_layout)
-        dir_layout.addWidget(match_btn)
-        dir_group.setLayout(dir_layout)
-        control_layout.addWidget(dir_group)
-        
-        btn_group = QGroupBox("操作控制")
-        btn_layout = QVBoxLayout()
-        
+            bar.addActions([
+                Action(FIF.ADD, "加载", triggered=self._on_folder_path_changed),
+                Action(FIF.EDIT, "标签", checkable=True),
+            ])
 
-        btn_row1 = QHBoxLayout()
-        create_poly_btn = QPushButton("新建多边形")
-        finish_poly_btn = QPushButton("完成多边形")
-        delete_selected_btn = QPushButton("删除选中")
-        delete_selected_btn.setShortcut("Delete")
-        clear_all_btn = QPushButton("清空所有")
+            bar.addSeparator()
+            
+            bar.addActions([
+                Action(FIF.LEFT_ARROW,triggered=self._imageManager.previous,shortcut="Left"),
+                Action(FIF.RIGHT_ARROW,triggered=self._imageManager.next,shortcut="Right"),
+            ])
 
-        create_poly_btn.clicked.connect(self.on_Key_N_pressed)
-        finish_poly_btn.clicked.connect(self.on_Key_N_pressed)
-        delete_selected_btn.clicked.connect(self.delete_selected)
-        clear_all_btn.clicked.connect(self.clear_all)
+            bar.addWidget(self._progress_widget)
 
-        btn_row1.addWidget(create_poly_btn)
-        btn_row1.addWidget(finish_poly_btn)
-        btn_row1.addWidget(delete_selected_btn)
-        btn_row1.addWidget(clear_all_btn)
-        
-        btn_row2 = QHBoxLayout()
-        save_btn = QPushButton("保存标注")
-        save_btn.setShortcut("Ctrl+S")
-        delete_btn = QPushButton("删除标注")
-        reset_view_btn = QPushButton("重置视图")
-        reset_view_btn.setShortcut("Space")
-        reset_label_btn = QPushButton("重置数据")
+            bar.addActions([
+                Action(FIF.SEARCH,triggered=self._on_search_clicked),
+            ])
 
-        save_btn.clicked.connect(self.save_annotations)
-        reset_view_btn.clicked.connect(self.reset_view)
-        delete_btn.clicked.connect(self.delete_annotations)
-        reset_label_btn.clicked.connect(self.reset_labels)
+            bar.addSeparator()
 
-        btn_row2.addWidget(save_btn)
-        btn_row2.addWidget(delete_btn)
-        btn_row2.addWidget(reset_view_btn)
-        btn_row2.addWidget(reset_label_btn)
-        
-        # 跳转控制
-        go_layout = QHBoxLayout()
-        go_label1 = QLabel("图片序号：")
-        go_label1.setFixedWidth(50)
-        self.go_text = QLineEdit()
-        self.go_text.setValidator(QRegExpValidator(QRegExp("[1-9][0-9]*")))
-        update_go_btn = QPushButton("跳转")
-        update_go_btn.clicked.connect(self.go_to_image)
-        go_layout.addWidget(go_label1)
-        go_layout.addWidget(self.go_text, 1)
-        go_layout.addWidget(update_go_btn)
-        go_layout.addStretch()
-
-
-
-        # 快捷键说明
-        btn_row3 = QHBoxLayout()
-        shortcut_btn = QPushButton("快捷键说明")
-        shortcut_btn.clicked.connect(self.show_shortcut_help)
-        btn_row3.addWidget(shortcut_btn)
-
-        btn_layout.addLayout(btn_row1)
-        btn_layout.addLayout(btn_row2)
-        btn_layout.addLayout(go_layout)
-        btn_layout.addLayout(btn_row3)
-        btn_group.setLayout(btn_layout)
-        control_layout.addWidget(btn_group)
-        
-    
-        # 多边形属性
-        prop_group = QGroupBox("Charset属性")
-        prop_layout = QVBoxLayout()
-
-        id_layout = QHBoxLayout()
-        id_label = QLabel("ID:")
-        id_label.setFixedWidth(40)
-        self.poly_id = QLineEdit()
-        self.poly_id.setReadOnly(True)
-        id_layout.addWidget(id_label)
-        id_layout.addWidget(self.poly_id)
-        
-        text_layout = QHBoxLayout()
-        text_label = QLabel("文本:")
-        text_label.setFixedWidth(40)
-        self.poly_text = QLineEdit()
-        update_text_btn = QPushButton("更新文本")
-        update_text_btn.clicked.connect(self.update_poly_text)
-        text_layout.addWidget(text_label)
-        text_layout.addWidget(self.poly_text)
-        text_layout.addWidget(update_text_btn)
-        
-        lang_layout = QHBoxLayout()
-        lang_label = QLabel("语言:")
-        lang_label.setFixedWidth(40)
-        self.poly_lang = QLineEdit()
-        update_lang_btn = QPushButton("更新语言")
-        update_lang_btn.clicked.connect(self.update_poly_language)
-        lang_layout.addWidget(lang_label)
-        lang_layout.addWidget(self.poly_lang)
-        lang_layout.addWidget(update_lang_btn)
-        
-        prop_layout.addLayout(id_layout)
-        prop_layout.addLayout(text_layout)
-        prop_layout.addLayout(lang_layout)
-        prop_group.setLayout(prop_layout)
-        control_layout.addWidget(prop_group)
-        
-      
-        # 顶点编辑
-        vertex_group = QGroupBox("顶点编辑")
-        vertex_layout = QHBoxLayout()
-        self.vertex_idx = QLineEdit()
-        self.vertex_idx.setReadOnly(True)
-        self.vertex_idx.setMaximumWidth(50)
-        self.vertex_x = QLineEdit()
-        self.vertex_x.setMaximumWidth(70)
-        self.vertex_y = QLineEdit()
-        self.vertex_y.setMaximumWidth(70)
-        apply_vertex_btn = QPushButton("应用")
-        apply_vertex_btn.clicked.connect(self.apply_vertex_coords)
-        
-        vertex_layout.addWidget(QLabel("顶点索引:"))
-        vertex_layout.addWidget(self.vertex_idx)
-        vertex_layout.addWidget(QLabel("X:"))
-        vertex_layout.addWidget(self.vertex_x)
-        vertex_layout.addWidget(QLabel("Y:"))
-        vertex_layout.addWidget(self.vertex_y)
-        vertex_layout.addWidget(apply_vertex_btn)
-        vertex_group.setLayout(vertex_layout)
-        control_layout.addWidget(vertex_group)
-        control_layout.addStretch() # 控制布局添加弹性空间，用于调整按钮组与右侧显示区域的间距
-        # 右侧显示区域
-        display_group = QGroupBox("标注区域 (拖动顶点调整形状，右键拖动图像，滚轮缩放)")
-        canvas_layout = QVBoxLayout()
-        self.canvas = ImageCanvas(self)
-        self.canvas.key_Shift_pressed.connect(self.on_shift_pressed)
-        self.canvas.key_D_pressed.connect(self.on_d_pressed)
-        self.canvas.Key_Left_pressed.connect(self.on_Key_Left_pressed)
-        self.canvas.Key_Right_pressed.connect(self.on_Key_Right_pressed)
-        self.canvas.Key_N_pressed.connect(self.on_Key_N_pressed)
-        self.canvas.Key_ESCAPE_pressed.connect(self.on_Key_ESCAPE_pressed)
-
-        canvas_layout.addWidget(self.canvas)
-        display_group.setLayout(canvas_layout)
-        main_layout.addWidget(control_panel)
-        main_layout.addWidget(display_group, 1)
-
-        # 重写画布事件
-        self.original_mousePressEvent = self.canvas.mousePressEvent
-        self.original_mouseMoveEvent = self.canvas.mouseMoveEvent
-        self.original_mouseReleaseEvent = self.canvas.mouseReleaseEvent
-        self.canvas.mousePressEvent = self.on_canvas_click
-        self.canvas.mouseMoveEvent = self.on_canvas_drag
-        self.canvas.mouseReleaseEvent = self.on_canvas_release
-
+            bar.addActions([
+                Action(FIF.ROTATE,triggered=self._image_canvas.rotate_image,shortcut="R"),
+                Action(FIF.ZOOM_IN,triggered=self._image_canvas.zoom_in),
+                Action(FIF.ZOOM_OUT,triggered=self._image_canvas.zoom_out),
+                Action(FIF.DELETE,triggered=self._on_delete_image_clicked,shortcut="Delete"),
+            ])
+            return bar
     
 
     def browse_images_dir(self):
@@ -1175,7 +866,6 @@ class OCRAccuracyTool(QWidget):
         projection = line_p1 + t * line_vec
         return ((point.x() - projection.x())**2 + (point.y() - projection.y())**2)**0.5
         
-
     def show_shortcut_help(self):
         """显示快捷键说明弹窗"""
         class ShortcutDialog(QDialog):

@@ -1,16 +1,14 @@
-import numpy as np
-from PyQt5.QtWidgets import QWidget
-from .utils import Utils  
-from PyQt5.QtGui import QImage, QPainter, QPen, QBrush, QPolygonF, QColor, QPixmap
 
+# coding: utf-8
+from PyQt5.QtWidgets import QWidget
+from PyQt5.QtGui import QImage, QPainter, QPen, QBrush, QPolygonF, QColor, QPixmap
 from PyQt5.QtCore import Qt, QPoint, pyqtSignal, QPointF
 
+from QtUniversalToolFrameWork.components.widgets.image_canvas import ImageCanvas
 
-class ImageCanvas(QWidget):
-    """
-    图像显示与交互画布组件，提供缩放、平移等基础功能，优化焦点与快捷键处理。
-    """
 
+class PolygonsDrawImageCanvas(QWidget):
+   
     # 定义快捷键信号，用于与父组件通信
     key_Shift_pressed = pyqtSignal(bool)  # 传递Shift键按下状态
     key_D_pressed = pyqtSignal()  # D键按下信号

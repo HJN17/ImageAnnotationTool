@@ -9,12 +9,8 @@ from QtUniversalToolFrameWork.components.navigation import NavigationInterface, 
 from QtUniversalToolFrameWork.common.config import qconfig, OptionsConfigItem, ConfigItem, FolderValidator
 from common.icon import myIcon
 from resources import resource
-from .ocr_accuracy_interface1 import OCRAccuracyTool
+from .ocr_accuracy_interface111 import OCRAccuracyTool
 
-class Theme(Enum):
-    AUTO = 0
-    LIGHT = 1
-    DARK = 2
 
 class mWindow(MainWindow):
     
