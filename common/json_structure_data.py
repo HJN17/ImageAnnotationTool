@@ -5,11 +5,15 @@ import json
 from enum import Enum
 from PyQt5.QtCore import QPointF
 
+
+
 class AnnotationType(Enum):
     """ 标注类型枚举 """
     BBOX = "bbox" # 矩形框
     POLYGON = "polygon" # 多边形
     DEFAULT = "default" # 默认
+
+
 
 class DataItemInfo:
     def __init__(self,  text : str, language : str, points : list[QPointF], annotation_type : AnnotationType = AnnotationType.DEFAULT, caseLabel : str = "default"):
@@ -58,6 +62,9 @@ class DataItemInfo:
         @points.setter
         def points(self, value : list[QPointF]):
             self._points = value
+
+        def insert_point(self, index : int, point : QPointF):
+            self._points.insert(index, point)
         
 class  DataInfo:
     def __init__(self, file_name : str,items : list[DataItemInfo],label : str = "default",issues : list[str] = []):
@@ -77,6 +84,22 @@ class  DataInfo:
     def items(self) -> list[DataItemInfo]:
         return self._items
     
+    @property
+    def label(self) -> str:
+        return self._label
+    
+    @property
+    def issues(self) -> list[str]:
+        return self._issues
+    
+    @label.setter
+    def label(self, value : str):
+        self._label = value
+    
+    @issues.setter
+    def issues(self, value : list[str]):
+        self._issues = value
+
     @file_name.setter
     def file_name(self, value : str):
         self._file_name = value
@@ -87,6 +110,13 @@ class  DataInfo:
     def remove_item(self, index: int):
         if 0 <= index < len(self._items):
             del self._items[index]
+
+    def all_items_points(self) -> list[QPointF]:
+        """返回所有标注点"""
+        points = []
+        for item in self.items:
+            points.extend(item.points)
+        return points
 
 
 # google 标注数据格式
@@ -114,14 +144,16 @@ def load_json_data(json_path):
                 points = [QPointF(p[0], p[1]) for p in poly[0]]
                 text = charset_dict.get("text", "")
                 language = item.get('language', '')
-                items.append(DataItemInfo(text, language, points, AnnotationType.DEFAULT))
+                items.append(DataItemInfo(text, language, points, AnnotationType.DEFAULT,"character"))
                 
             text = item.get("text", "")
             points = [QPointF(p[0], p[1]) for p in item.get('poly', [])]
             language = item.get('language', '')
-            items.append(DataItemInfo(text, language, points, AnnotationType.DEFAULT))
+            items.append(DataItemInfo(text, language, points, AnnotationType.DEFAULT,"string"))
 
         return DataInfo(file_name=os.path.basename(json_path),items=items)
 
     except Exception as e:
         print(f"加载标注失败: {str(e)}")
+
+

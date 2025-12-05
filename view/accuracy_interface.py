@@ -2,12 +2,12 @@ import os
 from natsort import natsorted
 import shutil
 import json
-from PyQt5.QtCore import Qt, QPoint, QPointF, QEvent, QSettings,QRegExp
-from PyQt5.QtGui import QPolygonF,QColor
-from PyQt5.QtWidgets import (QWidget, QLabel, QPushButton, QLineEdit, QHBoxLayout, QVBoxLayout, 
+from PyQt5.QtCore import Qt, QPoint, QPointF, pyqtSlot,QRegExp
+from PyQt5.QtGui import QPolygonF,QColor,QPixmap
+from PyQt5.QtWidgets import (QWidget, QPushButton, QLineEdit, QHBoxLayout, QVBoxLayout, 
                            QGroupBox, QFileDialog, QMessageBox,QTextBrowser,QDialog)
 
-from QtUniversalToolFrameWork.common.image_utils import ImageManager
+from QtUniversalToolFrameWork.common.image_utils import ImageManager,get_image_paths
 from QtUniversalToolFrameWork.common.icon import Action,FluentIcon as FIF
 from QtUniversalToolFrameWork.components.widgets.image_canvas import ImageProgressWidget
 from QtUniversalToolFrameWork.components.widgets.label import CommandBarLabel
@@ -15,7 +15,7 @@ from QtUniversalToolFrameWork.components.widgets.command_bar import CommandBar
 
 from common.utils import Utils
 from components.image_canvas import PolygonsDrawImageCanvas
-
+from common.json_structure_data import DataInfo,DataItemInfo,load_json_data
 class OCRAccuracyInterface(QWidget):
     """OCR精度调整工具模块，用于调整OCR识别区域的多边形标注"""
 
@@ -35,28 +35,28 @@ class OCRAccuracyInterface(QWidget):
 
         self._shift_pressed = False
         self._n_pressed = False
-        self._show_polygons = True  # 默认显示多边形
-
         
+        self._show_data_items = True  # 默认显示DataItem
+
         self.init_ui()
         self.init_vars()
 
     def init_vars(self):
-        """初始化变量（适配新层级）"""
         self._data_info = None  # 根数据对象
-        self._current_data_index = -1  # 当前选中的DataInfo索引
 
-        self.creating_poly = False 
-        self.current_poly = []
+        self._current_data_index = -1  # 当前选中的DataItem索引
 
-        self.selected_vertex = -1 # 选中的顶点索引（扁平化索引）
+        self._creating_data_item = False # 是否正在创建DataItem
+        self._current_create_data_item = []  # 当前正在创建的DataItem（QPointF列表）
+        
+        self._current_point_index = -1  # 当前选中的点索引
 
-        self.dragging_vertex = False
-        self.dragging_poly = False
-        self.drag_start_pos = QPointF()
+        self._dragging_vertex = False
+        self._dragging_data_item = False # 是否正在拖动DataItem
+        self._drag_start_pos = QPointF()
 
-        self.poly_original_pos = []
-        self.poly_colors = []  # 每个Charset的颜色
+        self._data_item_original_pos = [] # 每个DataItem的原始位置（QPointF列表）
+        self._data_item_colors = []  # 每个DataItem的颜色
 
 
     def init_ui(self):
@@ -72,6 +72,24 @@ class OCRAccuracyInterface(QWidget):
         vBoxLayout.addWidget(self._image_canvas,1)
         vBoxLayout.addWidget(self._image_name_label,0,Qt.AlignLeft)
 
+    @property
+    def current_data_index(self):
+        return self._current_data_index
+    
+    @current_data_index.setter
+    def current_data_index(self, index):
+        
+        if index < 0 or index >= len(self._data_info.items):
+            return
+        
+        if self._current_data_index == index:
+            return
+
+        self._current_data_index = index
+        self._current_point_index = -1  # 重置当前点索引
+        self._update_canvas_data_items()
+
+
     def createCommandBar(self):
             bar = CommandBar(self)
             bar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
@@ -84,8 +102,8 @@ class OCRAccuracyInterface(QWidget):
             bar.addSeparator()
             
             bar.addActions([
-                Action(FIF.LEFT_ARROW,triggered=self._imageManager.previous,shortcut="Left"),
-                Action(FIF.RIGHT_ARROW,triggered=self._imageManager.next,shortcut="Right"),
+                Action(FIF.LEFT_ARROW,triggered=self._image_manager.previous,shortcut="Left"),
+                Action(FIF.RIGHT_ARROW,triggered=self._image_manager.next,shortcut="Right"),
             ])
 
             bar.addWidget(self._progress_widget)
@@ -104,347 +122,222 @@ class OCRAccuracyInterface(QWidget):
             ])
             return bar
     
+    def _on_folder_path_changed(self,):
 
-    def browse_images_dir(self):
-        """浏览图片文件夹"""
-        dir_path = QFileDialog.getExistingDirectory(self, "选择图片文件夹")
-        if dir_path:
-            self.images_dir.setText(dir_path)
-            
-    def browse_jsons_dir(self):
-        """浏览JSON文件夹"""
-        dir_path = QFileDialog.getExistingDirectory(self, "选择JSON文件夹")
-        if dir_path:
-            self.jsons_dir.setText(dir_path)
-            
-    def match_file_pairs(self):
-        """匹配图片和JSON文件对"""
-        images_dir = self.images_dir.text()
-        jsons_dir = self.jsons_dir.text()
-        
-        if not os.path.isdir(images_dir) or not os.path.isdir(jsons_dir):
-            QMessageBox.warning(self, "警告", "请选择有效的图片和JSON文件夹")
-            return
-        
-        image_extensions = ['.png', '.jpg', '.jpeg', '.bmp']
-        image_files = [f for f in os.listdir(images_dir) 
-                      if os.path.isfile(os.path.join(images_dir, f)) 
-                      and os.path.splitext(f)[1].lower() in image_extensions]
-        
-        # 匹配对应的JSON文件
-        self.file_pairs = []
-        for img_file in natsorted(image_files):
-            base_name = os.path.splitext(img_file)[0]
-            json_file = f"{base_name}.json"
-            json_path = os.path.join(jsons_dir, json_file)
-            if os.path.exists(json_path):
-                self.file_pairs.append({
-                    'image': os.path.join(images_dir, img_file),
-                    'json': json_path
-                })
+        folder = QFileDialog.getExistingDirectory(
+            self, "选择图像文件夹", self._current_dir or "./",
+            QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
+        )
 
-        self.settings.setValue("ocr_accuracy_tool_images_dir", images_dir)
-        self.settings.setValue("ocr_accuracy_tool_jsons_dir", jsons_dir)
-
-        if self.file_pairs:
-            print(f"已匹配 {len(self.file_pairs)} 对文件")
-            print(self.file_pairs)
-            self.status_updated.emit(f"已匹配 {len(self.file_pairs)} 对文件", "green")
-            self.current_index = 0
-            self.load_current_file()
-        else:
-            QMessageBox.warning(self, "警告", "未找到匹配的文件对")
-            self.status_updated.emit("未找到匹配的文件对", "red")
+        if folder:
+            self._current_dir = folder
+            image_paths = get_image_paths(self._current_dir)
+            self._image_manager.set_items(image_paths)
     
-    def load_current_file(self):
-        """加载当前文件"""
+            
+    @pyqtSlot(QPixmap)
+    def _display_current_image(self, pixmap: QPixmap):
+        if not pixmap:
+            return
 
-        if 0 <= self.current_index < len(self.file_pairs):
-            file_pair = self.file_pairs[self.current_index]
-            self.canvas.load_image(file_pair['image'])
-            self.load_annotations(file_pair['json'])
-            self.update_status()
-
-
-    def update_status(self):
-        """更新进度标签（当前图像索引/总数量）"""
-        if self.file_pairs:
-            self.count_updated.emit(self.current_index + 1, len(self.file_pairs))
-            self.name_updated.emit(os.path.basename(self.file_pairs[self.current_index]['image']))
-        self.scale_updated.emit(self.canvas.scale)
+        self._image_canvas.load_pixmap(pixmap)
+        self._image_name_label.setText(self._image_manager.current_item)
 
             
-    def load_annotations(self, json_path):
+    def _load_annotations(self, json_path):
         """加载标注数据"""
 
         self.init_vars()
+
+        self._data_info = load_json_data(json_path)
         
-        if os.path.exists(json_path):
-            try:
 
-                with open(json_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
+        # 更新画布显示
+        self._update_canvas_data_items()
 
-
-                json_data_list_info = []
-                for item in data.get('DataList',[]):
-
-                    charsets  = []
-                    for charset_dict in item.get('charsets', []):
-                        poly = [QPointF(p[0], p[1]) for p in charset_dict.get('poly', [])[0]]
-                        text = charset_dict.get("text", "")
-                        confidence = charset_dict.get("confidence", 0.0)
-                        charsets.append(JsonCharsetInfo(poly, text, confidence))
-
-                    # 解析JsonDataListInfo
-                    id = item.get("id", "")
-                    text = item.get("text", "")
-                    poly = [QPointF(p[0], p[1]) for p in item.get('poly', [])]
-                    language = item.get('language', '')
-                    json_data_list_info.append(JsonDataListInfo(id, text, language, poly, charsets))
-
-                # 创建根数据对象
-                self.JsonDataList = JsonDataList(
-                    FilePath=data.get("FilePath", ""),
-                    Source=data.get("Source", ""),
-                    data_list=json_data_list_info
-                )
+        # 自动选中第一个DataItem
+        if self._data_info and self._data_info.items:
+            self.selected_charset_index = 0
+            self._update_data_item_property_display()
                 
-
-                self.poly_colors = [Utils.generate_random_color() for _ in self.JsonDataList.all_charsets]
-                self.canvas.poly_colors = self.poly_colors
-
-
-                print(self.JsonDataList)
-
-                # 更新画布显示
-                self.update_canvas_polygons()
-                self.canvas.update()
-
-                # 自动选中第一个Charset
-                if self.JsonDataList.all_charsets:
-                    self.selected_charset_index = 0
-                    self.update_charset_property_display()
-                
-            except Exception as e:
-                self.status_updated.emit(f"加载标注失败: {str(e)}", "red")
+ 
             
-    def update_canvas_polygons(self):
-        """更新画布上的多边形（只显示Charset的poly）"""
-        if not self.JsonDataList:
-            self.canvas.polygons = []
+    def _update_canvas_data_items(self):
+        """更新画布上的DataItem（只显示DataItem的points）"""
+        if not self._data_info or not self._data_info.items:
+            self._image_canvas.all_points = []
+            self._image_canvas.update()
             return
 
-        if self.show_polygons:
-            # 显示所有Charset的poly + 当前正在创建的poly
-            if self.creating_poly and self.current_poly:
-                self.canvas.polygons = self.JsonDataList.charsets_poly_list + [self.current_poly]
+        if self._show_data_items:
+
+            self._image_canvas.selected_item = self.current_data_index
+
+            # 显示所有DataItem + 当前正在创建的DataItem
+            if self._creating_data_item and self._current_create_data_item:
+
+                self._image_canvas.all_points = self._data_info.all_items_points() + [self._current_create_data_item]
+
+                self._image_canvas.all_points_colors = self._data_item_colors + [QColor(0, 255, 255, 150)]
             else:
-                self.canvas.polygons = self.JsonDataList.charsets_poly_list
+                self._image_canvas.all_points = self._data_info.all_items_points()
+                self._image_canvas.all_points_colors = self._data_item_colors
         else:
-            self.canvas.polygons = []
+            self._image_canvas.all_points = []
 
-        # 更新颜色列表（包含正在创建的poly）
-        if self.creating_poly and self.current_poly:
-            self.canvas.poly_colors = self.poly_colors + [QColor(0, 255, 255, 150)]
-        else:
-            self.canvas.poly_colors = self.poly_colors
+        self._image_canvas.update()
 
-
-    def update_charset_property_display(self):
-        """更新选中Charset的属性显示"""
-        if self.selected_charset_index < 0 or not self.JsonDataList:
-            self.poly_id.clear()
-            self.poly_text.clear()
-            self.poly_lang.clear()
+    def _update_data_item_property_display(self):
+        """更新选中DataItem的属性显示"""
+        if self.selected_charset_index < 0 or not self._data_info or not self._data_info.items:
             return
 
-        # 获取选中的Charset及其所属的DataListInfo
-        data_info, data_index, charset_subindex = self.JsonDataList.get_charset_by_index(self.selected_charset_index)
-        if not data_info:
-            return
+    def mousePressEvent(self, event): 
 
-        # 显示属性
-        self.poly_id.setText(f"{data_info.id}_{charset_subindex}")  # 组合ID（DataListInfoID_Charset索引）
-        self.poly_text.setText(self.JsonDataList.all_charsets[self.selected_charset_index].text)
-        self.poly_lang.setText(data_info.language)
-
-        # 更新顶点信息（如果有选中的顶点）
-        if self.selected_vertex >= 0:
-            charset = self.JsonDataList.all_charsets[self.selected_charset_index]
-            if 0 <= self.selected_vertex < len(charset.poly):
-                point = charset.poly[self.selected_vertex]
-                self.vertex_idx.setText(str(self.selected_vertex))
-                self.vertex_x.setText(f"{point.x():.1f}")
-                self.vertex_y.setText(f"{point.y():.1f}")
-            else:
-                self.vertex_idx.clear()
-                self.vertex_x.clear()
-                self.vertex_y.clear()
-
-
-    def on_canvas_click(self, event):
-        """画布点击事件（适配Charset层级）"""
-        if not self.JsonDataList:
-            self.original_mousePressEvent(event)
+        if not self._data_info or not self._data_info.items:
+            self._image_canvas.mousePressEvent(event)
             return
 
         # 转换坐标到图像坐标系
-        x = (event.pos().x() - self.canvas.offset.x()) / self.canvas.scale
-        y = (event.pos().y() - self.canvas.offset.y()) / self.canvas.scale
+        x = (event.pos().x() - self._image_canvas.offset.x()) / self._image_canvas.scale
+        y = (event.pos().y() - self._image_canvas.offset.y()) / self._image_canvas.scale
+        
         click_point = QPointF(x, y)
-
-        # 正在创建多边形
+        
         if self.creating_poly and event.button() == Qt.LeftButton:
-            self.add_create_poly_vertex(click_point)
+            self._add_create_data_item_vertex(click_point)
             return
 
-        # Shift键添加顶点
-        if self.shift_pressed and event.button() == Qt.LeftButton:
-            self.add_vertex_to_charset_edge(click_point)
+        if self._shift_pressed and event.button() == Qt.LeftButton:
+            self._add_vertex_to_data_item(click_point)
             return
 
-        # 点击顶点
+
         if event.button() == Qt.LeftButton:
-            vertex_clicked = self.check_vertex_click(click_point)
-            if vertex_clicked:
+            
+            self._check_vertex_click(click_point)
+
+            if self._dragging_vertex:
                 return
 
-            # 点击多边形内部
-            poly_clicked = self.check_poly_click(click_point)
-            if poly_clicked:
+           
+            self._check_poly_click(click_point)
+
+            if self._dragging_data_item:
                 return
 
-            # 未点击任何元素
-            self.selected_charset_index = -1
-            self.selected_vertex = -1
-            self.canvas.selected_item = -1
-            self.update_charset_property_display()
-            self.canvas.update()
+            self.current_data_index = -1
+            self._current_point_index = -1
 
-        self.original_mousePressEvent(event)
+        self._image_canvas.mousePressEvent(event)
 
 
-    def add_create_poly_vertex(self, click_point):
-        """添加创建多边形的顶点"""
-        if self.canvas.image is None:
-            self.status_updated.emit("请先加载图片", "red")
-            return
+    def _add_create_data_item_vertex(self, click_point):
+        """添加创建DataItem的顶点"""
+ 
+        w = self._image_canvas.width()
+        h = self._image_canvas.height()
 
-        # 限制在图片范围内
-        img_width = self.canvas.image.width()
-        img_height = self.canvas.image.height()
-        clamped_point = QPointF(
-            max(0, min(click_point.x(), img_width)),
-            max(0, min(click_point.y(), img_height))
+        clamped_point = QPointF( # 限制在图片范围内
+            max(0, min(click_point.x(), w)),
+            max(0, min(click_point.y(), h))
         )
 
-        self.current_poly.append(clamped_point)
-        self.update_canvas_polygons()
-        self.canvas.update()
-        self.status_updated.emit(f"已添加顶点 ({clamped_point.x():.1f}, {clamped_point.y():.1f})，继续点击添加或完成", "white")
+        self._current_create_data_item.append(clamped_point)
+        self._update_canvas_data_items()
+        self._image_canvas.update()
 
-    def check_vertex_click(self, click_point):
+    def _check_vertex_click(self, click_point):
         """检查是否点击了顶点"""
-        all_charsets = self.JsonDataList.all_charsets
-        threshold = 10 / self.canvas.scale
+        items = self._data_info.items
+        threshold = 10 / self._image_canvas.scale
 
-        for i, charset in enumerate(all_charsets):
-            for j, point in enumerate(charset.poly):
-                dist = ((point.x() - click_point.x())**2 + (point.y() - click_point.y())**2)**0.5
+        for i, item in enumerate(items):
+            for j, point in enumerate(item.points):
+                dist = ((point.x() - click_point.x())**2 + (point.y() - click_point.y())**2)**0.5 # 计算距离
                 if dist < threshold:
-                    # 选中该顶点
-                    self.selected_charset_index = i
-                    self.selected_vertex = j
-                    self.canvas.selected_item = i
-                    self.dragging_vertex = True
-                    self.update_charset_property_display()
-                    self.canvas.update()
-                    return True
-        return False
+                  
+                    self.current_data_index = i
+                    self._current_point_index = j
+                    self._dragging_vertex = True # 拖动顶点
 
-    def check_poly_click(self, click_point):
+    def _check_poly_click(self, click_point):
         """检查是否点击了多边形内部"""
-        all_charsets = self.JsonDataList.all_charsets
+        items = self._data_info.items
 
-        for i, charset in enumerate(all_charsets):
-            if not charset.poly:
+        for i, item in enumerate(items):
+            
+            points = item.points
+
+            if not points:
                 continue
-            q_poly = QPolygonF(charset.poly)
-            if q_poly.containsPoint(click_point, Qt.OddEvenFill):
-                # 选中该多边形
-                self.selected_charset_index = i
-                self.selected_vertex = -1
-                self.canvas.selected_item = i
-                self.dragging_poly = True
-                self.drag_start_pos = click_point
-                # 保存原始位置
-                self.poly_original_pos = [QPointF(p.x(), p.y()) for p in charset.poly]
-                self.update_charset_property_display()
-                self.canvas.update()
-                return True
-        return False
 
-    def add_vertex_to_charset_edge(self, click_point):
-        """在Charset的边上添加顶点"""
-        all_charsets = self.JsonDataList.all_charsets
-        threshold = 2 / self.canvas.scale
-        best_charset_idx = -1
-        best_edge_idx = -1
-        min_dist = float("inf")
+            polyf = QPolygonF(points) # 转换为QPolygonF
 
-        for i, charset in enumerate(all_charsets):
-            poly = charset.poly
-            if len(poly) < 2:
+            if polyf.containsPoint(click_point, Qt.OddEvenFill): # 检查是否点击了多边形内部
+                # 选中该DataItem
+                self.current_data_index = i
+                self._current_point_index = -1
+                self._dragging_data_item = True
+                self._drag_start_pos = click_point
+                self._data_item_original_pos = [QPointF(p.x(), p.y()) for p in points]
+    
+    def _add_vertex_to_data_item(self, click_point):
+        """在DataItem的边上添加顶点"""
+    
+        threshold = 2 / self._image_canvas.scale
+        item_idx = -1 
+        best_edge_idx = -1 
+        min_dist = float("inf") # 最小距离，用于判断点击是否在边的附近
+
+        for i, item in enumerate(self._data_info.items):
+            points = item.points
+
+            if len(points) < 2:
                 continue
-            for j in range(len(poly)):
-                p1 = poly[j]
-                p2 = poly[(j + 1) % len(poly)]
-                dist = self.point_to_line_distance(click_point, p1, p2)
+            
+            for j in range(len(points)):
+                p1 = points[j]
+                p2 = points[(j + 1) % len(points)]
+                dist = Utils.point_to_line_distance(click_point, p1, p2)
                 if dist < threshold and dist < min_dist:
                     min_dist = dist
-                    best_charset_idx = i
+                    item_idx = i
                     best_edge_idx = j + 1  # 插入到边的后面
 
-        if best_charset_idx != -1:
+        if item_idx != -1:
             # 插入新顶点
-            charset = all_charsets[best_charset_idx]
-            charset.poly.insert(best_edge_idx, click_point)
-            self.selected_charset_index = best_charset_idx
-            self.selected_vertex = -1
-            self.canvas.selected_item = best_charset_idx
-            self.update_canvas_polygons()
-            self.canvas.update()
-            self.update_charset_property_display()
-            self.status_updated.emit(f"已在Charset {best_charset_idx} 的边上添加顶点", "white")
+            item = self._data_info.items[item_idx]
+            item.insert_point(best_edge_idx, click_point)
+            self._current_point_index = best_edge_idx
+            self._image_canvas.selected_item = item_idx
 
-    def on_canvas_drag(self, event):
-        """画布拖动事件（适配Charset层级）"""
-        if not self.JsonDataList:
-            self.original_mouseMoveEvent(event)
+            self._update_canvas_data_items()
+            self._image_canvas.update()
+
+    def mouseMoveEvent(self, event):
+        if not self._dragging_vertex and not self._dragging_data_item:
+            self._image_canvas.mouseMoveEvent(event)
             return
 
-        # 转换坐标
-        x = (event.pos().x() - self.canvas.offset.x()) / self.canvas.scale
-        y = (event.pos().y() - self.canvas.offset.y()) / self.canvas.scale
+        x = (event.pos().x() - self._image_canvas.offset.x()) / self._image_canvas.scale
+        y = (event.pos().y() - self._image_canvas.offset.y()) / self._image_canvas.scale
+
         current_point = QPointF(x, y)
 
-        # 拖动顶点
-        if self.dragging_vertex:
+        if self._dragging_vertex:
             self.drag_vertex(current_point)
             return
 
-        # 拖动多边形
-        if self.dragging_poly:
+        if self._dragging_data_item:
             self.drag_charset_poly(current_point)
             return
 
-        # 创建多边形时的预览
         if self.creating_poly:
             self.preview_create_poly(current_point)
             return
 
-        self.original_mouseMoveEvent(event)
+        self._image_canvas.mouseMoveEvent(event)
 
     def drag_vertex(self, current_point):
         """拖动顶点"""
@@ -854,17 +747,7 @@ class OCRAccuracyInterface(QWidget):
 
  
     
-    def point_to_line_distance(self, point, line_p1, line_p2):
-        """计算点到线段的距离"""
-        if line_p1 == line_p2:
-            return ((point.x() - line_p1.x())**2 + (point.y() - line_p1.y())**2)**0.5
-
-        line_vec = line_p2 - line_p1
-        point_vec = point - line_p1
-        line_len_sq = line_vec.x()**2 + line_vec.y()**2
-        t = max(0, min(1, (point_vec.x() * line_vec.x() + point_vec.y() * line_vec.y()) / line_len_sq))
-        projection = line_p1 + t * line_vec
-        return ((point.x() - projection.x())**2 + (point.y() - projection.y())**2)**0.5
+    
         
     def show_shortcut_help(self):
         """显示快捷键说明弹窗"""

@@ -44,7 +44,7 @@ class OCRAccuracyTool(QWidget):
         self.creating_poly = False
         self.current_poly = []
         self.selected_charset_index = -1  # 选中的Charset索引（扁平化索引）
-        self.selected_vertex = -1
+        self.selected_vertex = -1 # 选中的顶点索引（扁平化索引）
         self.dragging_vertex = False
         self.dragging_poly = False
         self.drag_start_pos = QPointF()

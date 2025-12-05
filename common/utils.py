@@ -4,6 +4,20 @@ from PyQt5.QtGui import QColor, QGuiApplication
 class Utils:
 
     @staticmethod
+    def point_to_line_distance(self, point, line_p1, line_p2):
+        """计算点到线段的距离"""
+        if line_p1 == line_p2:
+            return ((point.x() - line_p1.x())**2 + (point.y() - line_p1.y())**2)**0.5
+
+        line_vec = line_p2 - line_p1
+        point_vec = point - line_p1
+        line_len_sq = line_vec.x()**2 + line_vec.y()**2
+        t = max(0, min(1, (point_vec.x() * line_vec.x() + point_vec.y() * line_vec.y()) / line_len_sq))
+        projection = line_p1 + t * line_vec
+        return ((point.x() - projection.x())**2 + (point.y() - projection.y())**2)**0.5
+
+
+    @staticmethod
     def count_non_empty_values(dic):
         # 同样排除常见空值，返回符合条件的数量
         return sum(1 for value in dic.values() if value not in (None, "", [], {}, ()))
