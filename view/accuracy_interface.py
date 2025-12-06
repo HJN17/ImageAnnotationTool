@@ -42,6 +42,18 @@ class AccuracyInterface(QWidget):
         
         self._show_data_items = True  # 默认显示DataItem
 
+
+        self._progress_widget.progress.connect(self._on_progress_changed)
+
+        self._image_manager.image_loaded.connect(self._display_current_image)
+
+        self._image_manager.current_item_changed.connect(self._set_progress_value)
+
+        self._image_manager.item_deleted.connect(self._set_progress_range)
+        self._image_manager.item_inserted.connect(self._set_progress_range)
+        self._image_manager.model_reset.connect(self._set_progress_range)
+
+
         self.init_ui()
         self.init_vars()
 
@@ -67,15 +79,26 @@ class AccuracyInterface(QWidget):
     def init_ui(self):
         """初始化UI"""
         vBoxLayout = QVBoxLayout(self)
-        vBoxLayout.setContentsMargins(10, 10, 10, 10)
+        vBoxLayout.setContentsMargins(10, 30, 10, 10)
         vBoxLayout.setAlignment(Qt.AlignTop) 
+
+
+        self._progress_widget.set_slider_width(200)
 
         self._image_name_label.setContentsMargins(20, 0, 0, 0)
 
         vBoxLayout.addWidget(self._commandBar,0,Qt.AlignHCenter)
-        vBoxLayout.setSpacing(10)
+        vBoxLayout.setSpacing(20)
         vBoxLayout.addWidget(self._image_canvas,1)
+        vBoxLayout.setSpacing(20)
         vBoxLayout.addWidget(self._image_name_label,0,Qt.AlignLeft)
+
+
+    def _set_progress_range(self):
+        self._progress_widget.setRange(1, self._image_manager.count)
+        
+    def _set_progress_value(self):
+        self._progress_widget.setProgress(self._image_manager.current_index+1)
 
     @property
     def current_data_index(self):
@@ -98,10 +121,10 @@ class AccuracyInterface(QWidget):
     def createCommandBar(self):
             bar = CommandBar(self)
             bar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-
+            
             bar.addActions([
                 Action(FIF.ADD, "加载", triggered=self._on_folder_path_changed),
-                Action(FIF.EDIT, "标签", checkable=True),
+                Action(FIF.EDIT, "显示标注", checkable=True,name="show_annotations"),
             ])
 
             bar.addSeparator()
@@ -125,6 +148,10 @@ class AccuracyInterface(QWidget):
                 Action(FIF.ZOOM_OUT,triggered=self._image_canvas.zoom_out),
                 Action(FIF.DELETE,triggered=self._on_delete_image_and_annotations_clicked,shortcut="Delete"),
             ])
+
+            for button in bar.commandButtons:
+                if button.objectName() == "show_annotations":
+                    print("11111111111111111")
             return bar
     
     def _on_folder_path_changed(self,):
@@ -170,7 +197,6 @@ class AccuracyInterface(QWidget):
             self.selected_charset_index = 0
             self._update_data_item_property_display()
                 
- 
             
     def _update_canvas_data_items(self):
         """更新画布上的DataItem（只显示DataItem的points）"""
