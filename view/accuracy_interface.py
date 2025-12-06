@@ -16,6 +16,8 @@ from QtUniversalToolFrameWork.components.widgets.command_bar import CommandBar
 from common.utils import Utils
 from components.image_canvas import PolygonsDrawImageCanvas
 from common.json_structure_data import DataInfo,DataItemInfo,load_json_data
+
+
 class OCRAccuracyInterface(QWidget):
     """OCR精度调整工具模块，用于调整OCR识别区域的多边形标注"""
 
@@ -151,7 +153,6 @@ class OCRAccuracyInterface(QWidget):
 
         self._data_info = load_json_data(json_path)
         
-
         # 更新画布显示
         self._update_canvas_data_items()
 
@@ -160,7 +161,6 @@ class OCRAccuracyInterface(QWidget):
             self.selected_charset_index = 0
             self._update_data_item_property_display()
                 
- 
             
     def _update_canvas_data_items(self):
         """更新画布上的DataItem（只显示DataItem的points）"""
