@@ -39,7 +39,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
                 color = self.all_points_colors[i]
             else:
                 color = Utils.generate_random_color()
-            
+                self.all_points_colors.append(color)
             # 原始坐标 → 画布坐标
             new_points = [
                 QPointF(point.x() * self.scale + self.offset.x(), 
