@@ -16,56 +16,59 @@ class AnnotationType(Enum):
 
 
 class DataItemInfo:
-    def __init__(self,  text : str, language : str, points : list[QPointF], annotation_type : AnnotationType = AnnotationType.DEFAULT, caseLabel : str = "default"):
+    def __init__(self,  text : str = "", language : str = "", points : list[QPointF] = [], annotation_type : AnnotationType = AnnotationType.DEFAULT, caseLabel : str = "default"):
         self._text = text
         self._language = language
         self._annotation_type = annotation_type
         self._caseLabel = caseLabel
         self._points = points
 
-        @property
-        def text(self) -> str:
-            return self._text
-        
-        @property
-        def language(self) -> str:
-            return self._language
-        
-        @property
-        def annotation_type(self) -> AnnotationType:
-            return self._annotation_type
-        
-        @property
-        def caseLabel(self) -> str:
-            return self._caseLabel
-        
-        @property
-        def points(self) -> list[QPointF]:
-            return self._points
-        
-        @text.setter
-        def text(self, value : str):
-            self._text = value
-                
-        @language.setter
-        def language(self, value : str):
-            self._language = value
-                
-        @annotation_type.setter
-        def annotation_type(self, value : AnnotationType):
-            self._annotation_type = value
-        
-        @caseLabel.setter
-        def caseLabel(self, value : str):
-            self._caseLabel = value
-        
-        @points.setter
-        def points(self, value : list[QPointF]):
-            self._points = value
+    @property
+    def text(self) -> str:
+        return self._text
+    
+    @property
+    def language(self) -> str:
+        return self._language
+    
+    @property
+    def annotation_type(self) -> AnnotationType:
+        return self._annotation_type
+    
+    @property
+    def caseLabel(self) -> str:
+        return self._caseLabel
+    
+    @property
+    def points(self) -> list[QPointF]:
+        return self._points
+    
+    @text.setter
+    def text(self, value : str):
+        self._text = value
+            
+    @language.setter
+    def language(self, value : str):
+        self._language = value
+            
+    @annotation_type.setter
+    def annotation_type(self, value : AnnotationType):
+        self._annotation_type = value
+    
+    @caseLabel.setter
+    def caseLabel(self, value : str):
+        self._caseLabel = value
+    
+    @points.setter
+    def points(self, value : list[QPointF]):
+        self._points = value
 
-        def insert_point(self, index : int, point : QPointF):
-            self._points.insert(index, point)
-        
+    def insert_point(self, index : int, point : QPointF = QPointF()):
+        self._points.insert(index, point)
+    
+    def remove_point(self, index : int):
+        self._points.pop(index)
+
 class  DataInfo:
     def __init__(self, file_name : str,items : list[DataItemInfo],label : str = "default",issues : list[str] = []):
         self._file_name = file_name
@@ -110,7 +113,8 @@ class  DataInfo:
     def remove_item(self, index: int):
         if 0 <= index < len(self._items):
             del self._items[index]
-
+    
+    @property
     def all_items_points(self) -> list[QPointF]:
         """返回所有标注点"""
         points = []
@@ -119,13 +123,25 @@ class  DataInfo:
         return points
 
 
-# google 标注数据格式
-def load_json_data(json_path):
+def save_json_data(json_path : str, data_info : DataInfo):
+    """保存标注数据"""
+    if not data_info or not data_info.items:
+        raise ValueError("DataInfo 为空或没有标注项")
+    
+    try:
+
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(data_info.__dict__, f, ensure_ascii=False, indent=4)
+        
+    except Exception as e:
+        raise e # 抛出异常，由调用者处理
+
+
+def load_json_data(json_path) -> DataInfo:
     """加载标注数据"""
     
     if not os.path.exists(json_path):
-        print(f"文件不存在: {json_path}")
-        return None
+        raise FileNotFoundError(f"文件不存在: {json_path}")
         
     try:
         with open(json_path, 'r', encoding='utf-8') as f:
@@ -154,6 +170,6 @@ def load_json_data(json_path):
         return DataInfo(file_name=os.path.basename(json_path),items=items)
 
     except Exception as e:
-        print(f"加载标注失败: {str(e)}")
+        raise e
 
 

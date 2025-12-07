@@ -42,7 +42,7 @@ class OCRAccuracyTool(QWidget):
         """初始化变量（适配新层级）"""
         self.JsonDataList = None  # 根数据对象
         self.creating_poly = False
-        self.current_poly = []
+        self.current_poly = [] # 当前正在创建的多边形
         self.selected_charset_index = -1  # 选中的Charset索引（扁平化索引）
         self.selected_vertex = -1 # 选中的顶点索引（扁平化索引）
         self.dragging_vertex = False

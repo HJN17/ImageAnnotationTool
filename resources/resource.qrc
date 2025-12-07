@@ -1,7 +1,5 @@
 <RCC>
     <qresource prefix="/app">
-        <file>images/ocr_log.png</file>
-        <file>images/ocr_black.svg</file>
-        <file>images/ocr_white.svg</file>
+       
     </qresource>
 </RCC>

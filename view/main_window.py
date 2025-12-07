@@ -9,7 +9,7 @@ from QtUniversalToolFrameWork.components.navigation import NavigationInterface, 
 from QtUniversalToolFrameWork.common.config import qconfig, OptionsConfigItem, ConfigItem, FolderValidator
 from common.icon import myIcon
 from resources import resource
-from .ocr_accuracy_interface111 import OCRAccuracyTool
+from .accuracy_interface import AccuracyInterface
 
 
 class mWindow(MainWindow):
@@ -21,20 +21,20 @@ class mWindow(MainWindow):
     def initNavigation(self):
         """ 初始化导航栏，添加导航项和分隔符 """
 
-        self.ocr_accuracy_tool = OCRAccuracyTool(self)
+        self.accuracy_interface = AccuracyInterface(self)
 
 
         #self.addScrollItem(self.imageViewInterface,self.imageViewInterface1,FIF.NAVIGATION, '导航')
 
         self.addSubInterface(self.homeInterface, FIF.HOME,'首页')
-        self.addSubInterface(self.ocr_accuracy_tool, myIcon.OCR,'图像工具')
+        self.addSubInterface(self.accuracy_interface, FIF.PHOTO,'图像工具')
         self.navigationInterface.addSeparator() 
 
         self.addSubInterface(self.settingInterface, FIF.SETTING, '设置', NavigationItemPosition.BOTTOM)
     
-    
     def initWindow(self):
         self.resize(980, 780)
         self.setMinimumWidth(860)
-        self.setWindowIcon(QIcon(':/app/images/ocr_log.png'))
-        self.setWindowTitle('OCR标注工具')
+        
+        self.setWindowIcon(QIcon(':/resource/images/logo.png'))
+        self.setWindowTitle('图像标注工具')
