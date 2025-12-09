@@ -101,7 +101,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
     
     def mousePressEvent(self, event): 
         
-        if self._original_pixmap.isNull():
+        if not self._original_pixmap:
             return
 
         click_point = QPointF( # 限制在图片范围内
@@ -257,7 +257,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
 
     def _drag_poly(self, current_point):
         """拖动整个多边形"""
-        if self.current_item_index < 0 or self._original_pixmap.isNull():
+        if self.current_item_index < 0 or not self._original_pixmap:
             return
 
         dx = current_point.x() - self._drag_start_pos.x()

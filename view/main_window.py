@@ -9,7 +9,7 @@ from QtUniversalToolFrameWork.components.navigation import NavigationInterface, 
 from QtUniversalToolFrameWork.common.config import qconfig, OptionsConfigItem, ConfigItem, FolderValidator
 from resources import resource
 from .accuracy_interface import AccuracyInterface
-
+from common.json_structure_data import jsonFileManager
 
 class mWindow(MainWindow):
     
@@ -37,3 +37,8 @@ class mWindow(MainWindow):
         
         self.setWindowIcon(QIcon(':/resource/images/logo.png'))
         self.setWindowTitle('图像标注工具')
+
+    
+    def closeEvent(self, e):
+        jsonFileManager.exit_handler()
+        super().closeEvent(e)

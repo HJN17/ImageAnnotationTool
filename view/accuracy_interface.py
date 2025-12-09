@@ -2,6 +2,7 @@ import os
 from natsort import natsorted
 import shutil
 import copy 
+import time
 from PyQt5.QtCore import Qt, QPoint, QPointF, pyqtSlot,pyqtSignal
 from PyQt5.QtGui import QPolygonF,QColor,QPixmap
 from PyQt5.QtWidgets import (QWidget, QPushButton, QLineEdit, QHBoxLayout, QVBoxLayout, 
@@ -19,7 +20,7 @@ from QtUniversalToolFrameWork.components.widgets.flyout import Flyout,FlyoutAnim
 
 from common.utils import Utils
 from components.image_canvas import PolygonsDrawImageCanvas
-from common.json_structure_data import DataInfo,DataItemInfo,load_json_data,save_json_data
+from common.json_structure_data import DataInfo,DataItemInfo,jsonFileManager
 from common.annotation import AnnotationType,AnnotationFrameBase
 
 
@@ -145,7 +146,7 @@ class AccuracyInterface(QWidget):
         self._image_canvas.init_vars()
 
         if self._show_annotations_action.isChecked():
-            #self._image_canvas.data_items = copy.deepcopy(self._data_info.items) # 复制数据项，避免直接操作原数据
+            #self._image_canvas.data_items = copy.deepcopy(self._data_info.items) # 复制数据项，避免直接操作原数据x
             self._image_canvas.data_items = self._data_info.items
             self._image_canvas.current_item_index = 0
 
@@ -158,13 +159,12 @@ class AccuracyInterface(QWidget):
         image_name = os.path.basename(self._image_manager.current_item)
         json_path = os.path.join(os.path.dirname(self._image_manager.current_item), f"{image_name.split('.')[0]}.json")
         try:
-            self._data_info = load_json_data(json_path)
-            
+      
+            self._data_info = jsonFileManager.load_json(json_path)
         except Exception:
             self._data_info = DataInfo(file_name=image_name, items=[])
 
-        if self._data_info and self._data_info.items:
-            self._on_show_annotations_toggled()
+        self._on_show_annotations_toggled()
                      
 
     def _update_data_item_property_display(self):
@@ -183,7 +183,9 @@ class AccuracyInterface(QWidget):
         
     def _finish_create_data_item(self):
 
-        if len(self._image_canvas.annotion_frame.get_points()) < 3:
+        points = self._image_canvas.annotion_frame.get_points()
+
+        if len(points) < 3:
             print("DataItem至少需要3个顶点")
             return
 
@@ -192,12 +194,15 @@ class AccuracyInterface(QWidget):
             language="",
             annotation_type=AnnotationType.DEFAULT,
             caseLabel="default",
-            points=self._image_canvas.annotion_frame.get_points()
+            points=points
         )
 
         self._image_canvas.data_items.append(new_data_item)
 
-        self._image_canvas.init_vars()
+        self._image_canvas.creating_data_item = True
+        self._image_canvas.annotion_frame = AnnotationFrameBase.create(AnnotationType.POLYGON)
+        self.setMouseTracking(False)
+        self.setCursor(Qt.ArrowCursor)
         self._image_canvas.current_item_index = len(self._data_info.items) - 1
         self._image_canvas.update()
         self._update_data_item_property_display()
@@ -235,10 +240,9 @@ class AccuracyInterface(QWidget):
         self._image_canvas.update()
 
     def _save_annotations(self):
-        
+
         if not self._data_info or not self._data_info.items:
             return
-        
         image_name = os.path.basename(self._image_manager.current_item)
         json_path = os.path.join(os.path.dirname(self._image_manager.current_item), f"{image_name.split('.')[0]}.json")
 
@@ -247,7 +251,7 @@ class AccuracyInterface(QWidget):
         self._data_info.issues = []
 
         try:
-            save_json_data(json_path, self._data_info)
+            jsonFileManager.save_json(json_path, self._data_info)
         except Exception as e:
             print(f"保存标注失败: {str(e)}")
             return
@@ -317,11 +321,6 @@ class AccuracyInterface(QWidget):
             return
         
         super().keyReleaseEvent(event)
-
-
-    # def mousePressEvent(self, event):
-    #     self._image_canvas.mousePressEvent(event)
-    #     super().mousePressEvent(event)
 
 
     @pyqtSlot(int)
@@ -402,8 +401,6 @@ class AccuracyInterface(QWidget):
             duration=3000, parent=self
         )
 
-
-    
 
     def show_shortcut_help(self):
         """显示快捷键说明弹窗"""
