@@ -38,10 +38,10 @@ class Utils:
         return None
     
     @staticmethod
-    def generate_random_color():
+    def generate_random_color()->QColor:
         """生成随机颜色，确保中等亮度和饱和度（不深不浅）"""
         hue = random.randint(0, 359)  # 随机色相（0-359，覆盖所有颜色）
         saturation = random.randint(120, 180) # 中等饱和度（120-180）- 避免颜色过于灰暗或过于鲜艳
         lightness = random.randint(140, 180) # 中等亮度（140-180）- 避免过深（<100）或过浅（>200)
-        return QColor.fromHsl(hue, saturation, lightness)
+        return QColor.fromHsl(hue, saturation, lightness) # 中等亮度和饱和度
 

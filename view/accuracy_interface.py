@@ -1,7 +1,7 @@
 import os
 from natsort import natsorted
 import shutil
-import json
+import copy 
 from PyQt5.QtCore import Qt, QPoint, QPointF, pyqtSlot,pyqtSignal
 from PyQt5.QtGui import QPolygonF,QColor,QPixmap
 from PyQt5.QtWidgets import (QWidget, QPushButton, QLineEdit, QHBoxLayout, QVBoxLayout, 
@@ -19,15 +19,13 @@ from QtUniversalToolFrameWork.components.widgets.flyout import Flyout,FlyoutAnim
 
 from common.utils import Utils
 from components.image_canvas import PolygonsDrawImageCanvas
-from common.json_structure_data import DataInfo,DataItemInfo,load_json_data,AnnotationType,save_json_data
-
+from common.json_structure_data import DataInfo,DataItemInfo,load_json_data,save_json_data
+from common.annotation import AnnotationType,AnnotationFrameBase
 
 
 
 class AccuracyInterface(QWidget):
     """OCR精度调整工具模块，用于调整OCR识别区域的多边形标注"""
-
-
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -44,6 +42,7 @@ class AccuracyInterface(QWidget):
         self._data_info = None
 
         self._current_dir = ""
+
         self._shift_pressed = False
         self._n_pressed = False
         
@@ -51,13 +50,10 @@ class AccuracyInterface(QWidget):
 
         self._image_manager.image_loaded.connect(self._display_current_image)
         self._image_manager.current_item_changed.connect(self._set_progress_value)
-        self._image_manager.current_item_changed.connect(self._save_annotations)
-
+        self._image_manager.skip_previous_item.connect(self._save_annotations)
         self._image_manager.item_deleted.connect(self._set_progress_range)
         self._image_manager.item_inserted.connect(self._set_progress_range)
         self._image_manager.model_reset.connect(self._set_progress_range)
-
-
 
         self.init_ui()
 
@@ -66,7 +62,6 @@ class AccuracyInterface(QWidget):
         vBoxLayout = QVBoxLayout(self)
         vBoxLayout.setContentsMargins(10, 30, 10, 10)
         vBoxLayout.setAlignment(Qt.AlignTop) 
-
 
         self._progress_widget.set_slider_width(200)
 
@@ -77,8 +72,6 @@ class AccuracyInterface(QWidget):
         vBoxLayout.addWidget(self._image_canvas,1)
         vBoxLayout.setSpacing(20)
         vBoxLayout.addWidget(self._image_name_label,0,Qt.AlignLeft)
-
-
 
     def _set_progress_range(self):
         self._progress_widget.set_slider_range(1, self._image_manager.count)
@@ -114,8 +107,10 @@ class AccuracyInterface(QWidget):
 
             bar.addActions([
                 Action(FIF.ROTATE,triggered=self._image_canvas.rotate_image,shortcut="R"),
-                Action(FIF.ZOOM_IN,triggered=self._image_canvas.zoom_in),
-                Action(FIF.ZOOM_OUT,triggered=self._image_canvas.zoom_out),
+                #Action(FIF.ZOOM_IN,triggered=self._image_canvas.zoom_in),
+                #Action(FIF.ZOOM_OUT,triggered=self._image_canvas.zoom_out),
+                Action(FIF.ZOOM_IN,triggered=self._delete_selected_data_item),
+                Action(FIF.ZOOM_OUT,triggered=self._save_annotations),
                 Action(FIF.DELETE,triggered=self._on_delete_image_and_annotations_clicked,shortcut="Delete"),
             ])
 
@@ -132,8 +127,7 @@ class AccuracyInterface(QWidget):
             self._current_dir = folder
             image_paths = get_image_paths(self._current_dir)
             self._image_manager.set_items(image_paths)
-    
-            
+          
     @pyqtSlot(QPixmap)
     def _display_current_image(self, pixmap: QPixmap):
         if not pixmap:
@@ -143,11 +137,20 @@ class AccuracyInterface(QWidget):
         self._load_annotations()
         self._image_name_label.setText(self._image_manager.current_item)
 
-
     def _on_show_annotations_toggled(self):
-        self._image_canvas.show_data_items = self._show_annotations_action.isChecked()
-        self._image_canvas.update_changed.emit()       
 
+        if not self._image_manager or self._image_manager.is_empty():
+            return
+
+        self._image_canvas.init_vars()
+
+        if self._show_annotations_action.isChecked():
+            #self._image_canvas.data_items = copy.deepcopy(self._data_info.items) # 复制数据项，避免直接操作原数据
+            self._image_canvas.data_items = self._data_info.items
+            self._image_canvas.current_item_index = 0
+
+        self._image_canvas.update()
+        self._update_data_item_property_display()
 
     def _load_annotations(self):
         """加载标注数据"""
@@ -156,20 +159,13 @@ class AccuracyInterface(QWidget):
         json_path = os.path.join(os.path.dirname(self._image_manager.current_item), f"{image_name.split('.')[0]}.json")
         try:
             self._data_info = load_json_data(json_path)
+            
         except Exception:
             self._data_info = DataInfo(file_name=image_name, items=[])
 
-        self._image_canvas.init_vars()
-
-        self._image_canvas.data_items = self._data_info.items.copy()
-        self._image_canvas.tem_data_items = self._data_info.items.copy()
-
         if self._data_info and self._data_info.items:
-            self._image_canvas.current_item_index = 0
-            self._update_data_item_property_display()
-        
-        self._image_canvas.update_changed.emit()
-            
+            self._on_show_annotations_toggled()
+                     
 
     def _update_data_item_property_display(self):
         """更新选中DataItem的属性显示"""
@@ -180,13 +176,14 @@ class AccuracyInterface(QWidget):
         """开始创建DataItem"""
 
         self._image_canvas.creating_data_item = True
-        self._image_canvas.current_create_data_item = DataItemInfo()
+        self._image_canvas.annotion_frame = AnnotationFrameBase.create(AnnotationType.POLYGON)
         self._image_canvas.setMouseTracking(True)
-        cursor.set_widget_cursor(self._image_canvas, CursorStyle.CROSS)
+        self._image_canvas.setCursor(Qt.BlankCursor) # 隐藏鼠标光标
+        #cursor.set_widget_cursor(self._image_canvas, CursorStyle.CROSS)
         
     def _finish_create_data_item(self):
 
-        if len(self._image_canvas.current_create_data_item.points) < 3:
+        if len(self._image_canvas.annotion_frame.get_points()) < 3:
             print("DataItem至少需要3个顶点")
             return
 
@@ -195,44 +192,38 @@ class AccuracyInterface(QWidget):
             language="",
             annotation_type=AnnotationType.DEFAULT,
             caseLabel="default",
-            points=self._image_canvas.current_create_data_item.points.copy()
+            points=self._image_canvas.annotion_frame.get_points()
         )
 
-        self._data_info.items.append(new_data_item)
+        self._image_canvas.data_items.append(new_data_item)
 
-        self._image_canvas.creating_data_item = False
-        self._image_canvas.current_create_data_item = DataItemInfo()
-        self._image_canvas.setMouseTracking(False)
-        self._image_canvas.setCursor(Qt.ArrowCursor)
-
+        self._image_canvas.init_vars()
         self._image_canvas.current_item_index = len(self._data_info.items) - 1
-        self._image_canvas.current_point_index = -1
-        
-        self._image_canvas.update_changed.emit()
+        self._image_canvas.update()
         self._update_data_item_property_display()
 
     def _cancel_create_data_item(self):
         """取消创建DataItem"""
-        self._image_canvas.creating_data_item = False
-        self._image_canvas.current_create_data_item = DataItemInfo()
-        self._image_canvas.setMouseTracking(False)
-        self._image_canvas.setCursor(Qt.ArrowCursor)
-        self._image_canvas.update_changed.emit()
-
+        self._image_canvas.init_vars()
+        self.update()
+        
     def _delete_selected_data_item(self):
         """删除选中的DataItem"""
-        if self._image_canvas.current_item_index < 0 or not self._data_info.items:
+        if self._image_canvas.current_item_index < 0 or not self._data_info.items or not self._image_canvas.data_items:
             return
         
-        del self._data_info.items[self._image_canvas.current_item_index]
+        print(self._data_info.items[0].to_dict())
 
-        self._image_canvas.data_items = self._data_info.items.copy()
-        self._image_canvas.tem_data_items = self._data_info.items.copy()
+        # del self._data_info.items[self._image_canvas.current_item_index]
+        del self._image_canvas.data_items[self._image_canvas.current_item_index]
+
+        print(self._data_info.items[0].to_dict())
 
         self._image_canvas.current_item_index = -1
         self._image_canvas.current_point_index = -1
 
-        self._image_canvas.update_changed.emit()
+        self._image_canvas.update()
+        
         self._update_data_item_property_display()
         
     def _clear_all_data_items(self):
@@ -241,21 +232,19 @@ class AccuracyInterface(QWidget):
 
         self._data_info.items = []
         self._image_canvas.init_vars()
-        self._image_canvas.update_changed.emit()
+        self._image_canvas.update()
 
     def _save_annotations(self):
-
-        if self._image_canvas.current_item_index < 0 or not self._data_info or not self._data_info.items:
+        
+        if not self._data_info or not self._data_info.items:
             return
         
-        self._data_info.items = self._image_canvas.data_items.copy()
-
         image_name = os.path.basename(self._image_manager.current_item)
         json_path = os.path.join(os.path.dirname(self._image_manager.current_item), f"{image_name.split('.')[0]}.json")
 
         self._data_info.file_name = image_name
         self._data_info.label = ""
-        self._data_info.issues = ""
+        self._data_info.issues = []
 
         try:
             save_json_data(json_path, self._data_info)
@@ -330,9 +319,9 @@ class AccuracyInterface(QWidget):
         super().keyReleaseEvent(event)
 
 
-    def mousePressEvent(self, event):
-        self._image_canvas.mousePressEvent(event)
-        super().mousePressEvent(event)
+    # def mousePressEvent(self, event):
+    #     self._image_canvas.mousePressEvent(event)
+    #     super().mousePressEvent(event)
 
 
     @pyqtSlot(int)

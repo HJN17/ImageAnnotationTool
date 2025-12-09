@@ -1,17 +1,12 @@
 # coding:utf-8
-
+import sys
 import os
 import json
+import shutil
+from typing import List
 from enum import Enum
 from PyQt5.QtCore import QPointF
-
-
-
-class AnnotationType(Enum):
-    """ 标注类型枚举 """
-    BBOX = "bbox" # 矩形框
-    POLYGON = "polygon" # 多边形
-    DEFAULT = "default" # 默认
+from common.annotation import AnnotationType
 
 
 
@@ -69,15 +64,23 @@ class DataItemInfo:
     def remove_point(self, index : int):
         self._points.pop(index)
 
+    
+    def to_dict(self):
+        return {
+            "text": self.text,
+            "language": self.language,
+            "annotation_type": self.annotation_type.value,
+            "caseLabel": self.caseLabel,
+            "points": [[p.x(),p.y()] for p in self.points]
+        }
+
 class  DataInfo:
     def __init__(self, file_name : str,items : list[DataItemInfo],label : str = "default",issues : list[str] = []):
         self._file_name = file_name
-        self._items = items
         self._label = label
         self._issues = issues
-    
-    def __str__(self):
-        return f"DataInfo(file_name={self.file_name}, items={self.items})"
+        self._items = items
+
 
     @property
     def file_name(self) -> str:
@@ -121,6 +124,16 @@ class  DataInfo:
         for item in self.items:
             points.extend(item.points)
         return points
+    
+    def to_dict(self):
+        return {
+            "file_name": self.file_name,
+            "label": self.label,
+            "issues": self.issues,
+            "items": [item.to_dict() for item in self.items],
+        }
+
+
 
 
 def save_json_data(json_path : str, data_info : DataInfo):
@@ -131,11 +144,12 @@ def save_json_data(json_path : str, data_info : DataInfo):
     try:
 
         with open(json_path, 'w', encoding='utf-8') as f:
-            json.dump(data_info.__dict__, f, ensure_ascii=False, indent=4)
+            json.dump(data_info.to_dict(), f, ensure_ascii=False, indent=4)
         
     except Exception as e:
         raise e # 抛出异常，由调用者处理
 
+    
 
 def load_json_data(json_path) -> DataInfo:
     """加载标注数据"""
@@ -146,30 +160,73 @@ def load_json_data(json_path) -> DataInfo:
     try:
         with open(json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-
-        items  = []
-
-        for item in data.get('DataList',[]):
-
-            for charset_dict in item.get('charsets', []):
-
-                poly = charset_dict.get('points', [])
-                if not poly:
-                    continue
-                
-                points = [QPointF(p[0], p[1]) for p in poly[0]]
-                text = charset_dict.get("text", "")
-                language = item.get('language', '')
-                items.append(DataItemInfo(text, language, points, AnnotationType.DEFAULT,"character"))
-                
-            text = item.get("text", "")
-            points = [QPointF(p[0], p[1]) for p in item.get('poly', [])]
-            language = item.get('language', '')
-            items.append(DataItemInfo(text, language, points, AnnotationType.DEFAULT,"string"))
-
-        return DataInfo(file_name=os.path.basename(json_path),items=items)
+        
+        
+        return _load_data(data)
 
     except Exception as e:
         raise e
+
+
+
+def _load_data(data: dict) -> DataInfo:
+    
+    items: List[DataItemInfo] = []
+
+    for item_dict in data.get("items", []):
+        points = [QPointF(float(p[0]), float(p[1])) for p in item_dict.get("points", [])]
+        anno_type_value = item_dict.get("annotation_type", AnnotationType.DEFAULT.value)
+        try:
+            annotation_type = AnnotationType(anno_type_value)
+        except ValueError:
+            annotation_type = AnnotationType.DEFAULT
+        
+        data_item = DataItemInfo(
+            text=item_dict.get("text", ""),
+            language=item_dict.get("language", ""),
+            annotation_type=annotation_type,
+            caseLabel=item_dict.get("caseLabel", "default"),
+            points=points
+        )
+        items.append(data_item)
+
+
+    data_info = DataInfo(
+            file_name=data.get("file_name", ""),
+            label=data.get("label", "default"),
+            issues=data.get("issues", []),
+            items=items
+        ) 
+    print("load_json_data",data_info)
+    return data_info
+
+
+def _goolge_load_data(data: dict) -> DataInfo:
+    """加载标注数据"""
+    items  = []
+
+    for item in data.get('DataList',[]):
+
+        for charset_dict in item.get('charsets', []):
+
+            poly = charset_dict.get('poly', [])
+
+            if not poly:
+                continue
+            
+            points = [QPointF(p[0], p[1]) for p in poly[0]]
+            text = charset_dict.get("text", "")
+            language = item.get('language', '')
+            items.append(DataItemInfo(text, language, points, AnnotationType.DEFAULT,"character"))
+        
+        file_name = data.get("FilePath", "")
+        text = item.get("text", "")
+        points = [QPointF(p[0], p[1]) for p in item.get('poly', [])]
+        language = item.get('language', '')
+        items.append(DataItemInfo(text, language, points, AnnotationType.DEFAULT,"string"))
+        return DataInfo(file_name=file_name,items=items)
+
+
+
 
 

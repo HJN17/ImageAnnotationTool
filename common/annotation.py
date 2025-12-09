@@ -1,31 +1,85 @@
 # coding=utf-8
+from enum import Enum
 from PyQt5.QtCore import QPointF, Qt
-from PyQt5.QtGui import QPolygonF,QPainter
-
+from PyQt5.QtGui import QPolygonF,QPainter,QColor,QBrush,QPen
 from abc import ABC, abstractmethod
 
-class BaseAnnotation(ABC):
+
+class AnnotationType(Enum):
+    """ 标注类型枚举 """
+    BBOX = "bbox" # 矩形框
+    POLYGON = "polygon" # 多边形
+    DEFAULT = "default" # 默认
+
+class AnnotationFrameBase(ABC):
+
+    annotation_type={}
+                
     @abstractmethod
-    def draw(self, painter: QPainter, scale: float, offset: QPointF):
+    def draw(self, painter: QPainter, scale: float, offset: QPointF,color: QColor):
         """绘制标注"""
         pass
     
-    @abstractmethod
-    def contains_point(self, point: QPointF) -> bool:
-        """判断点是否在标注内"""
-        pass
+    @classmethod
+    def register(cls, annotation_type: AnnotationType):
+        def wrapper(annotation_cls):
+            if annotation_type not in cls.annotation_type:
+                cls.annotation_type[annotation_type] = annotation_cls
+            return annotation_cls
+        return wrapper
+    
 
-class PolygonAnnotation(BaseAnnotation):
-    def draw(self, painter, scale, offset):
+    @classmethod
+    def create(cls, annotation_type: AnnotationType, parent=None, **kwargs):
+        if annotation_type not in cls.annotation_type:
+            raise ValueError(f"标注类型 `{annotation_type}` 未注册")
+        return cls.annotation_type[annotation_type](**kwargs)
+
+
+
+
+@AnnotationFrameBase.register(AnnotationType.POLYGON)
+class PolygonAnnotation(AnnotationFrameBase):
+    def __init__(self, points: list[QPointF] = None):
         
-        pass
-    def contains_point(self, point: QPointF) -> bool:
+        self._points = points if points else []
+        self._temp_points = []
 
-        pass
+    def draw(self, painter: QPainter, scale: float, offset: QPointF,color: QColor = QColor(Qt.blue)):
+        
+        new_points = [QPointF(point.x() * scale + offset.x(), 
+                            point.y() * scale + offset.y()) 
+                    for point in self._points+self._temp_points]
+        
+        painter.setPen(QPen(color, 2))
 
-class RectAnnotation(BaseAnnotation):
+        transparent_color = QColor(color)
+        transparent_color.setAlpha(128)
+        painter.setBrush(QBrush(transparent_color, Qt.SolidPattern))
+        
+        if len(new_points) >= 3:
+                painter.drawPolygon(QPolygonF(new_points)) # 绘制多边形
+            
+        painter.setBrush(QBrush(color, Qt.SolidPattern))
+        for point in new_points:
+            painter.drawEllipse(point, 3, 3)
+
+    def set_temp_point(self, point: QPointF):
+        self._temp_points = [point]
+    
+    def add_point(self, point: QPointF):
+        self._points.append(point)
+
+    def get_points(self) -> list[QPointF]:
+        return self._points
+ 
+
+@AnnotationFrameBase.register(AnnotationType.BBOX)
+class BboxAnnotation(AnnotationFrameBase):
     def draw(self, painter, scale, offset):
         # 绘制矩形逻辑
         pass
-
+    def contains_point(self, point: QPointF) -> bool:
+        # 检查点是否在矩形内
+        pass
 

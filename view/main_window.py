@@ -7,7 +7,6 @@ from QtUniversalToolFrameWork.view.main_window import MainWindow
 from QtUniversalToolFrameWork.common.icon import FluentIcon as FIF
 from QtUniversalToolFrameWork.components.navigation import NavigationInterface, NavigationItemPosition
 from QtUniversalToolFrameWork.common.config import qconfig, OptionsConfigItem, ConfigItem, FolderValidator
-from common.icon import myIcon
 from resources import resource
 from .accuracy_interface import AccuracyInterface
 
