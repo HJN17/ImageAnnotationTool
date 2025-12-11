@@ -18,6 +18,9 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         self.parent = parent
 
         self.shift_pressed = False
+
+        self.m_pressed = False
+
         self.all_points_colors = [] 
         self.polygon_clipper = PolygonClipper()
         self.init_vars()
@@ -37,6 +40,11 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         self.current_point_index = -1  # 当前选中的点索引
 
         self._dragging_vertex = False
+
+        self.split_points = [] # 分割点列表
+
+        self.split_point_index = -1 # 分割点索引
+
 
         self._dragging_data_item = False # 是否正在拖动DataItem
         self._drag_start_pos = QPointF() # 拖动开始位置
@@ -191,6 +199,11 @@ class PolygonsDrawImageCanvas(ImageCanvas):
             self._add_vertex_to_data_item(clamped_point)
             return
 
+        if self.m_pressed and event.button() == Qt.LeftButton:
+            
+            return
+
+
 
         if event.button() == Qt.LeftButton:
 
@@ -216,6 +229,8 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         self.annotion_frame.add_point(clamped_point)
                 
         self.update()
+
+ 
 
     def _check_vertex_click(self, clamped_point):
         """检查是否点击了顶点"""
@@ -291,6 +306,42 @@ class PolygonsDrawImageCanvas(ImageCanvas):
             self.current_item_index = item_idx
             self.update()
     
+    def _add_split_vertex_to_data_item(self, clamped_point):
+        """在当前点添加分割顶点"""
+
+        items = self.data_items
+
+        threshold = 2 / self.scale
+        item_idx = -1 
+        best_edge_idx = -1 
+        min_dist = float("inf") # 最小距离，用于判断点击是否在边的附近
+
+        for i, item in enumerate(items):
+            points = item.points
+
+            if len(points) < 2:
+                continue
+            
+            for j in range(len(points)):
+                p1 = points[j]
+                p2 = points[(j + 1) % len(points)]
+                dist = Utils.point_to_line_distance(clamped_point, p1, p2)
+                if dist < threshold and dist < min_dist:
+                    min_dist = dist
+                    item_idx = i
+                    best_edge_idx = j + 1  # 插入到边的后面
+        
+        if item_idx != -1:
+            item = items[item_idx]
+
+
+            
+            self.current_item_index = item_idx
+            self.update()
+
+
+
+
     def mouseMoveEvent(self, event):
 
         current_point = event.pos()
