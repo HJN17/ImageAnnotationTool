@@ -39,22 +39,20 @@ class AccuracyInterface(QWidget):
         self._image_name_label = CommandBarLabel(self)
         self._commandBar = self.createCommandBar()
         
-
         self._data_info = None
-
         self._current_dir = ""
 
-        self._shift_pressed = False
-        self._n_pressed = False
-        
-        self._progress_widget.progress.connect(self._on_progress_changed)
 
+        self._progress_widget.progress.connect(self._on_progress_changed)
         self._image_manager.image_loaded.connect(self._display_current_image)
         self._image_manager.current_item_changed.connect(self._set_progress_value)
         self._image_manager.skip_previous_item.connect(self._save_annotations)
         self._image_manager.item_deleted.connect(self._set_progress_range)
         self._image_manager.item_inserted.connect(self._set_progress_range)
         self._image_manager.model_reset.connect(self._set_progress_range)
+
+
+
 
         self.init_ui()
 
@@ -84,7 +82,7 @@ class AccuracyInterface(QWidget):
             bar = CommandBar(self)
             bar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
             
-            self._show_annotations_action = Action(FIF.TAG, "标注", checkable=True,triggered=self._on_show_annotations_toggled)
+            self._show_annotations_action = Action(FIF.TAG, "标注", checkable=True,triggered=self._on_show_annotations_toggled,shortcut="S")
 
             bar.addActions([
                 Action(FIF.ADD, "加载", triggered=self._on_folder_path_changed),
@@ -108,10 +106,9 @@ class AccuracyInterface(QWidget):
 
             bar.addActions([
                 Action(FIF.ROTATE,triggered=self._image_canvas.rotate_image,shortcut="R"),
-                #Action(FIF.ZOOM_IN,triggered=self._image_canvas.zoom_in),
-                #Action(FIF.ZOOM_OUT,triggered=self._image_canvas.zoom_out),
-                Action(FIF.ZOOM_IN,triggered=self._delete_selected_data_item),
-                Action(FIF.ZOOM_OUT,triggered=self._save_annotations),
+                Action(FIF.ZOOM_IN,triggered=self._image_canvas.zoom_in),
+                Action(FIF.ZOOM_OUT,triggered=self._image_canvas.zoom_out),
+                Action(FIF.ZOOM_OUT,triggered=self._delete_selected_data_item),
                 Action(FIF.DELETE,triggered=self._on_delete_image_and_annotations_clicked,shortcut="Delete"),
             ])
 
@@ -183,10 +180,9 @@ class AccuracyInterface(QWidget):
         
     def _finish_create_data_item(self):
 
-        points = self._image_canvas.annotion_frame.get_points()
+        points = self._image_canvas.convert_annotion_frame_coords()
 
-        if len(points) < 3:
-            print("DataItem至少需要3个顶点")
+        if not points:
             return
 
         new_data_item = DataItemInfo(
@@ -198,11 +194,6 @@ class AccuracyInterface(QWidget):
         )
 
         self._image_canvas.data_items.append(new_data_item)
-
-        self._image_canvas.creating_data_item = True
-        self._image_canvas.annotion_frame = AnnotationFrameBase.create(AnnotationType.POLYGON)
-        self.setMouseTracking(False)
-        self.setCursor(Qt.ArrowCursor)
         self._image_canvas.current_item_index = len(self._data_info.items) - 1
         self._image_canvas.update()
         self._update_data_item_property_display()
@@ -217,12 +208,11 @@ class AccuracyInterface(QWidget):
         if self._image_canvas.current_item_index < 0 or not self._data_info.items or not self._image_canvas.data_items:
             return
         
-        print(self._data_info.items[0].to_dict())
-
-        # del self._data_info.items[self._image_canvas.current_item_index]
+    
         del self._image_canvas.data_items[self._image_canvas.current_item_index]
 
-        print(self._data_info.items[0].to_dict())
+        del self._image_canvas.all_points_colors[self._image_canvas.current_item_index]
+        
 
         self._image_canvas.current_item_index = -1
         self._image_canvas.current_point_index = -1
@@ -269,8 +259,7 @@ class AccuracyInterface(QWidget):
 
         item.remove_point(self._image_canvas.current_point_index)
         self._image_canvas.current_point_index = -1
-        self._image_canvas.update_changed.emit()
-
+        self._image_canvas.update()
 
     def _on_shift_pressed(self, pressed):
 

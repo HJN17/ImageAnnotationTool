@@ -11,11 +11,10 @@ class AnnotationType(Enum):
     POLYGON = "polygon" # 多边形
     DEFAULT = "default" # 默认
 
-class AnnotationFrameBase(ABC):
+class AnnotationFrameBase():
 
     annotation_type={}
-                
-    @abstractmethod
+
     def draw(self, painter: QPainter, scale: float, offset: QPointF,color: QColor):
         """绘制标注"""
         pass
@@ -45,33 +44,19 @@ class PolygonAnnotation(AnnotationFrameBase):
         self._points = points if points else []
         self._temp_points = []
 
-    def draw(self, painter: QPainter, scale: float, offset: QPointF,color: QColor = QColor(Qt.blue)):
-        
-        new_points = [QPointF(point.x() * scale + offset.x(), 
-                            point.y() * scale + offset.y()) 
-                    for point in self._points+self._temp_points]
-        
-        painter.setPen(QPen(color, 2))
-
-        transparent_color = QColor(color)
-        transparent_color.setAlpha(128)
-        painter.setBrush(QBrush(transparent_color, Qt.SolidPattern))
-        
-        if len(new_points) >= 3:
-                painter.drawPolygon(QPolygonF(new_points)) # 绘制多边形
-            
-        painter.setBrush(QBrush(color, Qt.SolidPattern))
-        for point in new_points:
-            painter.drawEllipse(point, 3, 3)
-
     def set_temp_point(self, point: QPointF):
         self._temp_points = [point]
     
     def add_point(self, point: QPointF):
         self._points.append(point)
 
-    def get_points(self) -> list[QPointF]:
+    @property
+    def points(self) -> list[QPointF]:
         return self._points
+    
+    @property
+    def all_points(self) -> list[QPointF]:
+        return self._points + self._temp_points
  
 
 @AnnotationFrameBase.register(AnnotationType.BBOX)

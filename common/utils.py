@@ -4,7 +4,7 @@ from PyQt5.QtGui import QColor, QGuiApplication
 class Utils:
 
     @staticmethod
-    def point_to_line_distance(self, point, line_p1, line_p2):
+    def point_to_line_distance(point, line_p1, line_p2):
         """计算点到线段的距离"""
         if line_p1 == line_p2:
             return ((point.x() - line_p1.x())**2 + (point.y() - line_p1.y())**2)**0.5

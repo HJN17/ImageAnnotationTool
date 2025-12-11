@@ -161,39 +161,38 @@ class JsonFileManager:
             return
         self._INSTANCE_INIT = True
         
-        self._json_cache = defaultdict(lambda: ({}, 0.0, 0.0))  # 新增：(数据, 最后修改时间, 最后访问时间)
+        self._json_cache = defaultdict(lambda: ({}, 0.0, 0.0)) 
         self._write_timers = {} # 写入定时器: {文件路径: 定时器对象}
+
         self._write_locks = defaultdict(threading.Lock)   # 写入锁: {文件路径: 互斥锁}
-        self._cache_lock = threading.Lock()   # 缓存锁（保护缓存和定时器操作）
+        self._cache_lock = threading.Lock() 
 
         self._cleanup_thread = threading.Thread(target=self._cache_cleanup_loop, daemon=True)
         self._cleanup_thread.start()
 
     def _atomic_save_json(self, json_path : str, data_info : DataInfo): # 原子写入JSON（内部方法，加锁+临时文件替换）
         
-        lock = self._write_locks[json_path] # 获取文件的写入锁
-        lock.acquire() # 其他线程会阻塞在 acquire() 处，直到第一个线程释放锁，才会依次执行。
+        lock = self._write_locks[json_path] 
+
+        lock.acquire() 
         try:
             temp_json_path = f"{json_path}.tmp"
 
             with open(temp_json_path, 'w', encoding='utf-8') as f:
-                json.dump(data_info.to_dict(), f, ensure_ascii=False, indent=4) # 写入JSON文件（确保中文正常显示）
-
-            print(f"_atomic_save_json: {json_path}")
+                json.dump(data_info.to_dict(), f, ensure_ascii=False, indent=4) 
 
             os.replace(temp_json_path, json_path)
         finally:
-            lock.release() # 释放锁，允许其他线程写入
+            lock.release()
 
 
-    def _safe_load_json(self, json_path : str): # 检查临时文件（写入中断时优先读临时文件）
+    def _safe_load_json(self, json_path : str): 
         
         read_path = json_path if not os.path.exists(f"{json_path}.tmp") else f"{json_path}.tmp"
 
         if not os.path.exists(read_path):
             return {}
         
-        # 重试读取（避免写入未完成）
         retry_count = 0
         while retry_count < self.MAX_RETRY:
             try:
@@ -210,7 +209,6 @@ class JsonFileManager:
         return len(json.dumps(data_info.to_dict()))
 
     def _cache_cleanup(self):
-        """清理过期/超量的缓存"""
         with self._cache_lock:
             now = time.time()
             
@@ -223,7 +221,7 @@ class JsonFileManager:
 
                 sorted_items = sorted(self._json_cache.items(),key=lambda x: x[1][2]) # 按最后访问时间升序
 
-                overflow_count = len(self._json_cache) - self.MAX_CACHE_SIZE # 计算需要清理的数量
+                overflow_count = len(self._json_cache) - self.MAX_CACHE_SIZE 
                 overflow_paths = [path for path, _ in sorted_items[:overflow_count]]
             else:
                 overflow_paths = []
@@ -241,13 +239,12 @@ class JsonFileManager:
                 print(f"清理缓存：过期{len(expired_paths)}个，超量{len(overflow_paths)}个，剩余{len(self._json_cache)}个")
     
     def _cache_cleanup_loop(self):
-        """定时清理缓存的循环（守护线程）"""
         while True:
-            time.sleep(60)  # 每1分钟执行一次清理
+            time.sleep(60) 
             self._cache_cleanup()
 
 
-    def save_json(self, json_path : str, data_info : DataInfo): # 更新JSON（先更缓存，延迟写磁盘）
+    def save_json(self, json_path : str, data_info : DataInfo): 
 
         with self._cache_lock:
             
@@ -260,10 +257,10 @@ class JsonFileManager:
 
             self._json_cache[json_path] = (deepcopy(data_info), time.time(), time.time())
            
-            if json_path in self._write_timers: # 存在旧定时器，取消
-                self._write_timers[json_path].cancel() # 取消旧定时器
+            if json_path in self._write_timers: 
+                self._write_timers[json_path].cancel() 
 
-            timer = threading.Timer(self.DELAY_WRITE_MS / 1000, self._atomic_save_json, args=(json_path, data_info)) # 延迟写入磁盘
+            timer = threading.Timer(self.DELAY_WRITE_MS / 1000, self._atomic_save_json, args=(json_path, data_info))
             self._write_timers[json_path] = timer
             timer.start()
         
@@ -273,8 +270,6 @@ class JsonFileManager:
             if json_path in self._json_cache:
                 data_info, modify_time, _ = self._json_cache[json_path]
                 # 更新最后访问时间
-
-                print(f"json_cache: {self._json_cache[json_path]}")
 
                 self._json_cache[json_path] = (data_info, modify_time, time.time())
 
@@ -287,12 +282,10 @@ class JsonFileManager:
         with self._cache_lock:
             self._json_cache[json_path] = (deepcopy(data_info), time.time(), time.time())
 
-        print(f"data_info: {data_info}")
         return data_info
 
 
     def exit_handler(self):
-        print("程序退出，开始写入所有缓存到磁盘...")
         with self._cache_lock:
             for path, timer in self._write_timers.items():
                 if timer.is_alive():
@@ -360,11 +353,4 @@ class JsonFileManager:
             items.append(DataItemInfo(text, language, points, AnnotationType.DEFAULT,"string"))
             return DataInfo(file_name=file_name,items=items)
 
-
-
 jsonFileManager = JsonFileManager()
-
-
-
-# import atexit
-# atexit.register(exit_handler)
