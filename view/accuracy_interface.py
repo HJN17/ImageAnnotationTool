@@ -52,7 +52,7 @@ class AccuracyInterface(QWidget):
         self._image_manager.model_reset.connect(self._set_progress_range)
 
 
-
+        self._image_canvas.split_vertex_created.connect(self._finish_create_split_vertex)
 
         self.init_ui()
 
@@ -176,7 +176,6 @@ class AccuracyInterface(QWidget):
         self._image_canvas.annotion_frame = AnnotationFrameBase.create(AnnotationType.POLYGON)
         self._image_canvas.setMouseTracking(True)
         self._image_canvas.setCursor(Qt.BlankCursor) # 隐藏鼠标光标
-        #cursor.set_widget_cursor(self._image_canvas, CursorStyle.CROSS)
         
     def _finish_create_data_item(self):
 
@@ -197,6 +196,51 @@ class AccuracyInterface(QWidget):
         self._image_canvas.current_item_index = len(self._data_info.items) - 1
         self._image_canvas.update()
         self._update_data_item_property_display()
+
+    def _start_create_split_vertex(self):
+        self._image_canvas.creating_split_vertex = True
+        self._image_canvas.split_item_index = -1
+        self._image_canvas.annotion_frame = AnnotationFrameBase.create(AnnotationType.POINT)
+
+        self._image_canvas.setMouseTracking(True)
+        self._image_canvas.setCursor(Qt.PointingHandCursor) 
+        
+    def _finish_create_split_vertex(self):
+    
+        item_data_1, item_data_2 = self._image_canvas.finish_create_split_vertex()
+
+        if item_data_1:
+
+            new_data_item_1 = DataItemInfo(
+                text="",
+                language="",
+                annotation_type=AnnotationType.DEFAULT,
+                caseLabel="default",
+                points=item_data_1
+            )
+
+
+
+            self._image_canvas.data_items.append(new_data_item_1)
+            
+        
+        if item_data_2:
+    
+            new_data_item_2 = DataItemInfo(
+                text="",
+                language="",
+                annotation_type=AnnotationType.DEFAULT,
+                caseLabel="default",
+                points=item_data_2
+            )
+
+
+            self._image_canvas.data_items.append(new_data_item_2)
+        
+        self._image_canvas.current_item_index = len(self._data_info.items) - 1
+        self._image_canvas.update()
+        self._update_data_item_property_display()
+
 
     def _cancel_create_data_item(self):
         """取消创建DataItem"""
@@ -246,7 +290,6 @@ class AccuracyInterface(QWidget):
             print(f"保存标注失败: {str(e)}")
             return
 
-
     def _on_d_pressed(self):
         if self._image_canvas.current_item_index < 0 or self._image_canvas.current_point_index < 0 or not self._data_info or not self._data_info.items:
             return
@@ -271,6 +314,7 @@ class AccuracyInterface(QWidget):
         else:
             print("Shift键已释放")
             self._image_canvas.setCursor(Qt.ArrowCursor)
+
 
     def _on_n_pressed(self):
         if not self._image_canvas.creating_data_item:
@@ -298,6 +342,10 @@ class AccuracyInterface(QWidget):
 
         if event.key() == Qt.Key_Shift:
             self._on_shift_pressed(True)
+            return
+        
+        if event.key() == Qt.Key_M:
+            self._start_create_split_vertex()
             return
 
 
