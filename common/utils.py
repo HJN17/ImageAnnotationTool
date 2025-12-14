@@ -81,8 +81,29 @@ class Utils:
         return None
 
     
-
-
+    def compare_points_on_line(p: QPointF,q: QPointF,line_p1: QPointF, line_p2: QPointF,eps: float = 1e-8 ) -> int:
+       
+        dir_x = line_p2.x() - line_p1.x()
+        dir_y = line_p2.y() - line_p1.y()
+    
+        if abs(dir_x) < eps and abs(dir_y) < eps:
+            raise ValueError("基准点line_p1和line_p2不能重合！")
+        
+        dir_len = math.hypot(dir_x, dir_y)
+        unit_dir_x = dir_x / dir_len
+        unit_dir_y = dir_y / dir_len
+        
+        vec_p_x = p.x() - line_p1.x()
+        vec_p_y = p.y() - line_p1.y()
+        proj_p = vec_p_x * unit_dir_x + vec_p_y * unit_dir_y
+        
+        vec_q_x = q.x() - line_p1.x()
+        vec_q_y = q.y() - line_p1.y()
+        proj_q = vec_q_x * unit_dir_x + vec_q_y * unit_dir_y
+        
+        if abs(proj_p - proj_q) < eps:
+            return 0  # 两点重合
+        return -1 if proj_p < proj_q else 1
 
 
     @staticmethod

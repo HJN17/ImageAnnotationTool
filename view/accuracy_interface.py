@@ -218,12 +218,9 @@ class AccuracyInterface(QWidget):
                 caseLabel="default",
                 points=item_data_1
             )
-
-
-
+            print(f"item_data_1: {item_data_1}")
             self._image_canvas.data_items.append(new_data_item_1)
             
-        
         if item_data_2:
     
             new_data_item_2 = DataItemInfo(
@@ -233,8 +230,7 @@ class AccuracyInterface(QWidget):
                 caseLabel="default",
                 points=item_data_2
             )
-
-
+            print(f"item_data_2: {item_data_2}")
             self._image_canvas.data_items.append(new_data_item_2)
         
         self._image_canvas.current_item_index = len(self._data_info.items) - 1
