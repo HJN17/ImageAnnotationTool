@@ -9,6 +9,7 @@ class AnnotationType(Enum):
     """ 标注类型枚举 """
     BBOX = "bbox" # 矩形框
     POLYGON = "polygon" # 多边形
+    LINE = "line" # 线
     POINT = "point" # 点
     DEFAULT = "default" # 默认
 
@@ -130,7 +131,12 @@ class BboxAnnotation(AnnotationFrameBase):
     def draw(self, painter, scale, offset):
         # 绘制矩形逻辑
         pass
-    def contains_point(self, point: QPointF) -> bool:
-        # 检查点是否在矩形内
+
+
+@AnnotationFrameBase.register(AnnotationType.DEFAULT)
+class BboxAnnotation(AnnotationFrameBase):
+    def draw(self, painter, scale, offset):
+        # 绘制矩形逻辑
         pass
+
 

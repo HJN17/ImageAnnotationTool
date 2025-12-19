@@ -12,17 +12,12 @@ from collections import defaultdict
 from copy import deepcopy
 
 class DataItemInfo:
-    def __init__(self,  text : str = "", language : str = "", points : list[QPointF] = [], annotation_type : AnnotationType = AnnotationType.DEFAULT, caseLabel : str = "default"):
-        self._text = text
+    def __init__(self,language : str = "", annotation_type : AnnotationType = AnnotationType.DEFAULT, caseLabel : str = "",points : list[QPointF] = [],):
         self._language = language
         self._annotation_type = annotation_type
         self._caseLabel = caseLabel
-        self._points = points
+        self._points = points  
 
-    @property
-    def text(self) -> str:
-        return self._text
-    
     @property
     def language(self) -> str:
         return self._language
@@ -38,10 +33,6 @@ class DataItemInfo:
     @property
     def points(self) -> list[QPointF]:
         return self._points
-    
-    @text.setter
-    def text(self, value : str):
-        self._text = value
             
     @language.setter
     def language(self, value : str):
@@ -68,7 +59,6 @@ class DataItemInfo:
     
     def to_dict(self):
         return {
-            "text": self.text,
             "language": self.language,
             "annotation_type": self.annotation_type.value,
             "caseLabel": self.caseLabel,
@@ -309,10 +299,9 @@ class JsonFileManager:
                 annotation_type = AnnotationType.DEFAULT
             
             data_item = DataItemInfo(
-                text=item_dict.get("text", ""),
                 language=item_dict.get("language", ""),
                 annotation_type=annotation_type,
-                caseLabel=item_dict.get("caseLabel", "default"),
+                caseLabel=item_dict.get("caseLabel", ""),
                 points=points
             )
             items.append(data_item)

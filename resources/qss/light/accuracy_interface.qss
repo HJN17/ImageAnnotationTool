@@ -1,0 +1,38 @@
+
+AccuracyInterface>#view{
+    background-color: rgba(252, 249, 247, 1);
+}
+
+
+PolygonsDrawImageCanvas{
+    background-color:rgba(255, 255, 255, 1);
+    border: none;
+}
+
+PivotStacked > #view{
+    background-color:rgba(255, 255, 255, 1);
+    border: none;
+}
+
+
+
+
+
+PivotStacked > #stacked{
+    background-color : transparent;
+    border: none;
+} 
+
+
+InfoCardItem,
+InfoCardInterface,
+InfoCardInterface > #view{
+    background-color : transparent;
+    border: none;
+}
+
+
+InfoCardItem > #view{
+    background-color: rgba(249, 244, 240,1);
+    border-radius: 6px;
+}

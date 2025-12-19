@@ -11,10 +11,8 @@ from common.annotation import AnnotationType,AnnotationFrameBase
 from common.polygon_clip import polygon_clipper
 
 
-
 class PolygonsDrawImageCanvas(ImageCanvas):
 
-    # 分割点创建完成信号
     split_vertex_created = pyqtSignal()
 
     def __init__(self, parent=None):
@@ -37,7 +35,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
 
         self.creating_data_item = False 
         self.creating_split_vertex = False
-        self.annotion_frame = AnnotationFrameBase.create(AnnotationType.POLYGON)
+        self.annotion_frame = None
 
         self.current_point_index = -1  # 当前选中的点索引
 
@@ -57,7 +55,6 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         self.setCursor(Qt.ArrowCursor)
 
     def paintEvent(self, event):
-
 
         super().paintEvent(event)
         
@@ -80,7 +77,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
     def _get_color(self, index : int):
         """获取指定索引的颜色"""
 
-        if index < len(self.all_points_colors):
+        if 0 <= index < len(self.all_points_colors):
             color = self.all_points_colors[index]
         else:
             color = Utils.generate_random_color()
@@ -99,8 +96,6 @@ class PolygonsDrawImageCanvas(ImageCanvas):
                             point.y() * self.scale + self.offset.y()) 
                     for point in rotated_points]
             
-            #print(f"缩放+偏移后点：{[(int(p.x()),int(p.y())) for p in new_points]}")
-
             color = self._get_color(i)
 
             painter.setPen(QPen(color, 2))
@@ -163,20 +158,19 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         return QPointF(new_x, new_y)
     
     def _convert_to_original_coords(self, point: QPointF) -> QPointF:
-
         return QPointF(
             (point.x() - self.offset.x()) / self.scale,
             (point.y() - self.offset.y()) / self.scale)
 
-    def _is_point_in_pixmap(self, point: QPointF, offset : QPointF = QPointF(0,0), scale : float = 1.0) -> bool:
+    def _is_point_in_pixmap(self, point: QPointF) -> bool:
         """判断点是否在图片范围内"""
 
         if self.original_pixmap_w_h is None:
             return None
         
         return QPointF(
-            max(0, min((point.x() - offset.x()) / scale, self.original_pixmap_w_h.width())),
-            max(0, min((point.y() - offset.y()) / scale, self.original_pixmap_w_h.height())))
+            max(0, min(point.x(), self.original_pixmap_w_h.width())),
+            max(0, min(point.y(), self.original_pixmap_w_h.height())))
     
     def mousePressEvent(self, event): 
         
@@ -188,8 +182,11 @@ class PolygonsDrawImageCanvas(ImageCanvas):
 
         current_point = event.pos()
 
-        clamped_point = self._rotate_point_back(self._is_point_in_pixmap(current_point, self.offset, self.scale))
+        clamped_point = self._convert_to_original_coords(current_point)
 
+        clamped_point = self._rotate_point_back(clamped_point)
+
+        clamped_point = self._is_point_in_pixmap(clamped_point)
      
         if self.creating_data_item and event.button() == Qt.LeftButton:
             self._add_create_data_item_point(current_point)
@@ -209,7 +206,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
             if item_idx != -1 and vertex_idx != -1:
                 self.current_item_index = item_idx
                 self.current_point_index = vertex_idx
-                self._dragging_vertex = True # 拖动顶点
+                self._dragging_vertex = True 
                 return
 
             item_idx = self._check_poly_click(clamped_point)
@@ -250,37 +247,6 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         else:
             return (-1,-1)
 
-
-
-    def _get_intersection(self, item_idx: int, start_point: QPointF, end_point: QPointF) -> tuple:
-        
-        if item_idx < 0 or item_idx >= len(self.data_items):
-            raise IndexError(f"item_idx {item_idx} 超出数据范围")
-
-        item = self.data_items[item_idx]
-        points = item.points
-        num_points = len(points)
-
-        if num_points < 2:
-            return (-1 , None)
-
-        best_edge_idx = -1 # 记录最近的边索引
-        intersection_point = None
-        # 遍历所有边，找到距离最近的边
-        for j in range(num_points):
-            p1 = points[j]
-            p2 = points[(j + 1) % num_points]
-
-            
-            intersection_point = Utils.line_intersection(p1, p2,start_point, end_point)
-            if intersection_point is not None:
-                best_edge_idx = j
-                break
-
-
-        return best_edge_idx+1,intersection_point
-
-
     def _get_intersection_point(self, item_idx: int, start_point: QPointF, end_point: QPointF) -> tuple[int, Optional[QPointF]]:
         """
         查找线段与指定图形边的交点（排除起点）
@@ -293,7 +259,6 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         Returns:
             元组(最近边索引+1, 交点坐标)，无有效交点返回(-1, None)
         """
-        # 1. 边界检查
         if item_idx < 0 or item_idx >= len(self.data_items):
             raise IndexError(f"item_idx {item_idx} 超出数据范围（有效范围：0-{len(self.data_items)-1}）")
 
@@ -304,14 +269,12 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         if num_points < 2:
             return (-1, None)
 
-        # 2. 定义辅助函数：判断点是否为起点（考虑浮点精度）
         def is_start_point(point: QPointF, threshold: float = 1e-6) -> bool:
             """判断点是否为起点（增加浮点精度阈值）"""
             dx = abs(point.x() - start_point.x())
             dy = abs(point.y() - start_point.y())
             return dx < threshold and dy < threshold
 
-        # 3. 遍历所有边查找有效交点
         best_edge_idx = -1
         intersection_point = None
         
@@ -319,21 +282,17 @@ class PolygonsDrawImageCanvas(ImageCanvas):
             p1 = points[j]
             p2 = points[(j + 1) % num_points]
 
-            # 获取线段交点
             current_intersection = Utils.line_intersection(p1, p2, start_point, end_point)
             
-            # 4. 过滤掉起点，只保留有效交点
             if current_intersection is not None and not is_start_point(current_intersection):
                 best_edge_idx = j
                 intersection_point = current_intersection
-                break  # 找到第一个有效交点即返回（原逻辑）
+                break 
 
-        # 5. 边索引+1返回（保持原有逻辑）
         return (best_edge_idx + 1) if best_edge_idx != -1 else -1, intersection_point
 
-
     def _get_closest_point_index_and_edge(self, item_idx: int,point: QPointF) -> QPointF:
-
+        """ 查找点到指定图形边的最近距离点"""
         if item_idx < 0 or item_idx >= len(self.data_items):
             raise IndexError(f"item_idx {item_idx} 超出数据范围")
 
@@ -365,9 +324,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         closest_point = Utils.get_closest_point_on_line_segment(point, edge_p1, edge_p2)
         return best_edge_idx + 1,closest_point
     
-
-
-    def _check_vertex_click(self, clamped_point) -> tuple:
+    def _check_vertex_click(self, clamped_point:QPointF) -> tuple:
         """检查是否点击了顶点"""
 
         items = self.data_items
@@ -376,7 +333,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
 
         for i, item in enumerate(items):
             for j, point in enumerate(item.points):
-                
+
                 dist = ((point.x() - clamped_point.x())**2 + (point.y() - clamped_point.y())**2)**0.5 # 计算距离
                 if dist < threshold:
                     return (i, j)
@@ -469,7 +426,6 @@ class PolygonsDrawImageCanvas(ImageCanvas):
 
         current_point = event.pos()
         
-
         if self._dragging_vertex:
             self._drag_vertex(current_point)
             return
@@ -494,9 +450,16 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         if self.current_item_index < 0 or self.current_point_index < 0:
             return
         
-        clamped_point = self._rotate_point_back(self._is_point_in_pixmap(current_point , self.offset, self.scale))
+
+        clamped_point = self._convert_to_original_coords(current_point) # 转换为原始坐标
+
+        clamped_point = self._rotate_point_back(clamped_point) # 转换为旋转前的坐标
+
+        clamped_point = self._is_point_in_pixmap(clamped_point) # 限制在图片范围内
         
         
+        
+
         item = self.data_items[self.current_item_index]
         item.points[self.current_point_index] = clamped_point
 
@@ -509,7 +472,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
             return
         
 
-        current_point = QPointF((current_point.x() - self.offset.x()) / self.scale,(current_point.y() - self.offset.y()) / self.scale)
+        current_point = self._convert_to_original_coords(current_point) # 转换为原始坐标
 
         current_point = self._rotate_point_back(current_point)
 
@@ -539,8 +502,11 @@ class PolygonsDrawImageCanvas(ImageCanvas):
 
         self.update()
 
-    def convert_annotion_frame_coords(self) -> list[QPointF]:
+    def finish_create_frame_coords(self) -> list[QPointF]:
 
+        if not self.annotion_frame:
+            return None
+        
         points = self.annotion_frame.points
 
         if len(points) < 3:
@@ -561,10 +527,6 @@ class PolygonsDrawImageCanvas(ImageCanvas):
     def finish_create_split_vertex(self):
         
         points = self.data_items[self.split_item_index].points
-
-        print(f"self.split_point_index_start: {self.split_point_index_start} self.split_point_index_end: {self.split_point_index_end}")
-        print(f"annotion_frame: {self.annotion_frame.points}")
-
 
         item_data_1 = []
 
@@ -591,7 +553,6 @@ class PolygonsDrawImageCanvas(ImageCanvas):
              item_data_1.extend(points[0:self.split_point_index_start])
              item_data_1.extend(self.annotion_frame.points)
              item_data_1.extend(points[self.split_point_index_end:])
-
 
 
 

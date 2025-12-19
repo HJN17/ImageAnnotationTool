@@ -1,5 +1,35 @@
 <RCC>
     <qresource prefix="/app">
-       
+        <file>images/image.svg</file>
+
+        <file>images/black/undo.svg</file>
+        <file>images/black/redo.svg</file>
+
+
+        <file>images/black/bbox.svg</file>
+        <file>images/black/line.svg</file>
+        <file>images/black/mouse.svg</file>
+        <file>images/black/point.svg</file>
+        <file>images/black/polygon.svg</file>
+        <file>images/black/split.svg</file>
+        <file>images/black/vertex.svg</file>
+
+
+        <file>images/white/undo.svg</file>
+        <file>images/white/redo.svg</file>
+
+        <file>images/white/bbox.svg</file>
+        <file>images/white/line.svg</file>
+        <file>images/white/mouse.svg</file>
+        <file>images/white/point.svg</file>
+        <file>images/white/polygon.svg</file>
+        <file>images/white/split.svg</file>
+        <file>images/white/vertex.svg</file>
+
+
+
+
+        <file>qss/dark/accuracy_interface.qss</file>
+        <file>qss/light/accuracy_interface.qss</file>
     </qresource>
 </RCC>
