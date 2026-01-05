@@ -45,6 +45,7 @@ class InfoCardItem(QWidget):
         self._comboBox.setCurrentText(self._case_label)
 
         self._comboBox.currentTextChanged.connect(lambda text: self._set_case_label(text))
+        self._comboBox.currentTextChanged.connect(self.update)
 
         self._comboBox.clicked.connect(lambda: signalBus.selectItem.emit(self._id))
         self._delButton.clicked.connect(lambda: signalBus.deleteItem.emit(self._id))
@@ -151,9 +152,6 @@ class InfoCardInterface(ScrollArea):
         self._items = {}
         self._currentRouteKey = None
 
-
-
-
         self.scrollWidget = QWidget(self)
         signalBus.deleteItem.connect(self.removeItem)
         signalBus.selectItem.connect(self._set_current_item)
@@ -164,7 +162,6 @@ class InfoCardInterface(ScrollArea):
         self._init_ui()
 
     def _init_ui(self):
-        
         
         self.vBoxLayout = QVBoxLayout(self.scrollWidget)
         self.vBoxLayout.setSpacing(10)
@@ -185,11 +182,6 @@ class InfoCardInterface(ScrollArea):
 
     def addItem(self,routeKey,caseLabel : str, annotation_type:AnnotationType,onClick=None):
         return self.insertItem(-1, routeKey,caseLabel, annotation_type,onClick) 
-
-
-
-
-
 
     def insertItem(self, index: int, routeKey: str,caseLabel : str, annotation_type:AnnotationType,onClick=None):
         if routeKey in self.items:

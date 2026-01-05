@@ -137,7 +137,7 @@ class  DataInfo:
 class JsonFileManager:
 
     DELAY_WRITE_MS = 500
-    MAX_RETRY = 5  
+    MAX_RETRY = 5   # 最大重试次数
     RETRY_INTERVAL = 0.01
 
     CACHE_EXPIRE_SEC = 300
@@ -267,15 +267,17 @@ class JsonFileManager:
     def load_json(self, json_path : str):
         
         with self._cache_lock:
+
             if json_path in self._json_cache:
+
                 data_info, modify_time, _ = self._json_cache[json_path]
                 # 更新最后访问时间
 
                 self._json_cache[json_path] = (data_info, modify_time, time.time())
 
-                return deepcopy(data_info)
+                return deepcopy(data_info) 
         
-        data = self._safe_load_json(json_path)
+        data = self._safe_load_json(json_path) # 安全加载JSON
 
         data_info = self._load_data_info(data)
 

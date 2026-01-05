@@ -45,7 +45,7 @@ class AccuracyInterface(QWidget):
         self._image_name_label = CommandBarLabel(self)
         self._pivot_stacked = PivotStacked(self)
         self._annotation_type = AnnotationType.DEFAULT
-        self._label_card_manager = LabelCardManager()
+        self._label_card_manager = LabelCardManager(self)
 
 
         self._commandBar1, self._commandBar2 = self.createCommandBar()
@@ -59,11 +59,12 @@ class AccuracyInterface(QWidget):
         self._image_manager.image_loaded.connect(self._set_progress_value)
 
         self._image_manager.skip_previous_item.connect(self._save_annotations)
-        
+
         self._image_manager.item_deleted.connect(self._set_progress_range)
         self._image_manager.item_inserted.connect(self._set_progress_range)
         self._image_manager.model_reset.connect(self._set_progress_range)
 
+        self._label_card_manager.data_info_signal.connect(self._pivot_stacked.create_info_card_interface)
 
 
         keyManager.N.connect(self._on_n_pressed)
@@ -130,7 +131,6 @@ class AccuracyInterface(QWidget):
         self._annotation_type = annotation_type
         keyManager.release_all_keys()
         self._image_canvas.setFocus()
-
 
     def _set_progress_range(self):
         self._progress_widget.set_slider_range(1, self._image_manager.count)
@@ -202,10 +202,14 @@ class AccuracyInterface(QWidget):
             return
 
         self._image_canvas.load_pixmap(pixmap)
-        
-        self._load_annotations()
         self._image_name_label.setText(self._image_manager.current_item)
 
+        self._label_card_manager._preload_next_batch(self._image_manager.items,self._image_manager.current_index)
+
+        self._load_annotations()
+
+
+        
     def _on_show_annotations_toggled(self):
         if not self._image_manager or self._image_manager.is_empty():
             return
@@ -214,36 +218,19 @@ class AccuracyInterface(QWidget):
 
         if self._show_annotations_action.isChecked():
             dm.init_data_items()
-            self._create_card_annotation_interface()
+            self._pivot_stacked.show_info_card_interface(self._image_manager.current_item,dm.data_items)
         
     def _load_annotations(self):
         """加载标注数据"""
 
-        image_name = os.path.basename(self._image_manager.current_item)
-        json_path = os.path.join(os.path.dirname(self._image_manager.current_item), f"{image_name.split('.')[0]}.json")
-        try:
-      
-            dm.data_info = jsonFileManager.load_json(json_path)
-        except Exception:
-            dm.data_info = DataInfo(file_name=image_name, items=[])
+        dm.data_info = self._label_card_manager.get(self._image_manager.current_item)
+
+        if dm.data_info is None:
+            print(f"未找到标注文件 {self._image_manager.current_item}")
+            return
 
         self._on_show_annotations_toggled()
 
-    def _create_card_annotation_interface(self):
-        """创建卡片标注界面"""
-
-        if dm.data_items is None:
-            return
-        
-        # 清空标注项
-        self._pivot_stacked.clear_card_annotation_interface()
-
-        items = dm.data_items
-
-        sorted_items = natsorted(items, key=lambda x: (cl.get_label_name(x.caseLabel)=="default", x.caseLabel)) # 先排序默认标签，再排序其他标签
-
-        for item in sorted_items: 
-            self._pivot_stacked.add_card_annotation_interface(item.id,item.caseLabel,item.annotation_type)   
 
     @pyqtSlot(str)
     def _on_search_signal(self, search_text: str):

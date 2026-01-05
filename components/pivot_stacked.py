@@ -1,20 +1,21 @@
 
 # coding:utf-8
 import sys
-
+from natsort import natsorted
 from PyQt5.QtCore import Qt,pyqtSignal
 from PyQt5.QtWidgets import QFrame, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QSizePolicy
 from PyQt5.QtGui import QColor
 from QtUniversalToolFrameWork.components.navigation.pivot import SegmentedWidget
 from QtUniversalToolFrameWork.components.window.stacked_widget import StackedWidget
+from QtUniversalToolFrameWork.common.cache import LRUCache
 
 from common.utils import Utils
 from common.annotation import AnnotationType
 from common.style_sheet import StyleSheet
 from components.info_card import InfoCardInterface
 from components.label_card import LabelCardInterface
-
-
+from common.data_structure import DataItemInfo
+from common.cache_label_card import cl
 
 class PivotStacked(QWidget):
 
@@ -28,7 +29,7 @@ class PivotStacked(QWidget):
         self.stackedWidget = StackedWidget(self)
 
 
-        self.annotationInterface = InfoCardInterface(self)
+        self.annotationInterface = StackedInfoCardInterface(self)
         self.labelInterface = LabelCardInterface(self)
         self.issueInterface = InfoCardInterface(self)
 
@@ -71,16 +72,60 @@ class PivotStacked(QWidget):
         self.stackedWidget.addWidget(widget)
         self.pivot.addItem(routeKey=objectName, text=text)
 
-    def add_card_annotation_interface(self,routeKey: str, caseLabel : str, annotation_type:AnnotationType):
+    def show_info_card_interface(self,key:str,data_items:list):
+        self.annotationInterface.show_info_card_interface(key,data_items)
+
+    def create_info_card_interface(self,key:str,data_items:list):
+        return self.annotationInterface.create_info_card_interface(key,data_items)
+
+
+class StackedInfoCardInterface(QWidget):
+
+    def __init__(self, parent=None, batch_size=20):
+        super().__init__(parent)
         
-        self.annotationInterface.addItem(routeKey, caseLabel, annotation_type)
+        self._temp_widget = InfoCardInterface()
+        
+        self._cache = LRUCache(capacity=batch_size*2)
 
-    def clear_card_annotation_interface(self):
-        self.annotationInterface.clear()
+        self.main_layout = QVBoxLayout(self) 
+        
+        self.main_layout.setContentsMargins(0, 0, 0, 0) 
+        self.main_layout.setSpacing(0)
+        
+       
+        self.main_layout.addWidget(self._temp_widget)
+        
+        self.setLayout(self.main_layout)
 
 
-    def delete_card_annotation_interface(self, routeKey: str):
-        self.annotationInterface.removeItem(routeKey)
+    def create_info_card_interface(self,key:str,data_items:list):
+
+        infoCard = self._cache.get(key)
+
+        if infoCard is not None:
+            return infoCard
+
+        infoCard = InfoCardInterface(self)
+        sorted_items = natsorted(data_items, key=lambda x: (cl.get_label_name(x.caseLabel)=="default", x.caseLabel)) # 先排序默认标签，再排序其他标签
+
+        for item in sorted_items: 
+            infoCard.addItem(item.id,item.caseLabel,item.annotation_type)
+        
+        self._cache.put(key,infoCard)
+
+        return infoCard
+
+    
+    def show_info_card_interface(self,key:str,data_items:list):
+
+        infoCard = self.create_info_card_interface(key,data_items)
+        
+        self.replace_temp_widget(infoCard)
 
 
-
+    def replace_temp_widget(self,widget:InfoCardInterface):
+        self.main_layout.replaceWidget(self._temp_widget,widget) # 替换临时widget为infoCard
+        self._temp_widget.hide() # 隐藏临时widget
+        widget.show()
+        self._temp_widget = widget
