@@ -12,11 +12,16 @@ from collections import defaultdict
 from copy import deepcopy
 
 class DataItemInfo:
-    def __init__(self,language : str = "", annotation_type : AnnotationType = AnnotationType.DEFAULT, caseLabel : str = "",points : list[QPointF] = [],):
+    def __init__(self,id : str,language : str = "", annotation_type : AnnotationType = AnnotationType.DEFAULT, caseLabel : str = "",points : list[QPointF] = [],):
+        self._id = id
         self._language = language
         self._annotation_type = annotation_type
         self._caseLabel = caseLabel
         self._points = points  
+
+    @property
+    def id(self) -> str:
+        return self._id
 
     @property
     def language(self) -> str:
@@ -34,6 +39,10 @@ class DataItemInfo:
     def points(self) -> list[QPointF]:
         return self._points
             
+    @id.setter
+    def id(self, value : str):
+        self._id = value
+    
     @language.setter
     def language(self, value : str):
         self._language = value
@@ -59,6 +68,7 @@ class DataItemInfo:
     
     def to_dict(self):
         return {
+            "id": self.id,
             "language": self.language,
             "annotation_type": self.annotation_type.value,
             "caseLabel": self.caseLabel,
@@ -155,7 +165,7 @@ class JsonFileManager:
         self._write_timers = {} # 写入定时器: {文件路径: 定时器对象}
 
         self._write_locks = defaultdict(threading.Lock)   # 写入锁: {文件路径: 互斥锁}
-        self._cache_lock = threading.Lock() 
+        self._cache_lock = threading.Lock() # 缓存锁: 保护缓存数据结构的并发访问
 
         self._cleanup_thread = threading.Thread(target=self._cache_cleanup_loop, daemon=True)
         self._cleanup_thread.start()
@@ -289,7 +299,7 @@ class JsonFileManager:
     def _load_data_info(self, data) -> DataInfo:
         
         items: List[DataItemInfo] = []
-
+        id = 0
         for item_dict in data.get("items", []):
             points = [QPointF(float(p[0]), float(p[1])) for p in item_dict.get("points", [])]
             anno_type_value = item_dict.get("annotation_type", AnnotationType.DEFAULT)
@@ -299,13 +309,15 @@ class JsonFileManager:
                 annotation_type = AnnotationType.DEFAULT
             
             data_item = DataItemInfo(
+                id=str(id),
                 language=item_dict.get("language", ""),
                 annotation_type=annotation_type,
-                caseLabel=item_dict.get("caseLabel", ""),
+                caseLabel=item_dict.get("caseLabel", "default"),
                 points=points
             )
             items.append(data_item)
-
+            
+            id += 1
 
         data_info = DataInfo(
                 file_name=data.get("file_name", ""),
@@ -343,3 +355,10 @@ class JsonFileManager:
             return DataInfo(file_name=file_name,items=items)
 
 jsonFileManager = JsonFileManager()
+
+
+
+
+
+
+

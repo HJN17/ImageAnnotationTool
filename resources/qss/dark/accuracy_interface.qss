@@ -1,17 +1,19 @@
 
 AccuracyInterface>#view{
-    background-color: rgba(38, 38, 38, 1);
+    background-color: rgba(38, 38, 38, 0.95);
 }
 
 
 PolygonsDrawImageCanvas{
-    background-color:rgba(45, 45, 45, 1);
-    border: none;
+    background-color:rgba(50, 50, 50, 1);
+    border: 1px solid rgb(32, 32, 32);
 }
 
 PivotStacked > #view{
-    background-color:rgba(45, 45, 45, 1);
-    border: none;
+    background-color:rgba(50, 50, 50, 1);
+    border: 1px solid rgb(32, 32, 32);
+    border-radius : 8px;
+
 }
 
 
@@ -21,15 +23,10 @@ PivotStacked > #stacked{
 } 
 
 
-
-InfoCardItem,
 InfoCardInterface,
-InfoCardInterface > #view{
+LabelCardInterface,
+#scrollWidget{
     background-color : transparent;
     border: none;
 }
 
-InfoCardItem > #view{
-    background-color: rgba(38, 38, 38, 1);
-    border-radius: 6px;
-}

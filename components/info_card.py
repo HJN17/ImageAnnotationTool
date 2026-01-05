@@ -1,59 +1,73 @@
 # coding:utf-8
 import sys
-
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QFrame, QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QSizePolicy
-
+import traceback
+from PyQt5.QtCore import Qt,pyqtSignal,QRectF,QEvent
+from PyQt5.QtWidgets import QFrame, QWidget, QHBoxLayout, QVBoxLayout, QGraphicsDropShadowEffect
+from PyQt5.QtGui import QColor, QPainter, QBrush, QPen, QFont
 
 from QtUniversalToolFrameWork.common.font import getFont
 from QtUniversalToolFrameWork.common.icon import FluentIcon
-
+from QtUniversalToolFrameWork.common.color import ThemeBackgroundColor
 from QtUniversalToolFrameWork.components.widgets import ScrollArea
 from QtUniversalToolFrameWork.components.layout import ExpandLayout
 from QtUniversalToolFrameWork.components.widgets.label import CardLabel
 from QtUniversalToolFrameWork.components.widgets.combo_box import ComboBox
-from QtUniversalToolFrameWork.components.widgets.button import TransparentToolButton
-
-
+from QtUniversalToolFrameWork.components.widgets.button import TransparentToolButton,PushButton
 
 from common.annotation import AnnotationType
 from common.style_sheet import StyleSheet
+from common.case_label import cl
+from common.signal_bus import signalBus
 
 
 class InfoCardItem(QWidget):
 
-    def __init__(self,label_text : list[str], annotation_type:AnnotationType, parent=None):
-        super().__init__(parent=parent)
-       
+    def __init__(self,routeKey:str,caseLabel : str, annotation_type:AnnotationType, parent=None):
+        super().__init__(parent)
+
+        self._id = routeKey
+        self._color = cl.get_color(caseLabel)
+        self._case_label = caseLabel if caseLabel in cl.get_all_labels() else "default"
+        self.is_selected = False
+
         self._annotation_type = CardLabel(annotation_type.value.upper(), self)
         self._comboBox = ComboBox(self)
+
+        self._is_show = True
 
         self._personButton = TransparentToolButton(FluentIcon.ROBOT, self) 
         self._viewButton = TransparentToolButton(FluentIcon.VIEW, self) # HIDE
         self._pinButton = TransparentToolButton(FluentIcon.PIN, self) # UNPIN
         self._delButton = TransparentToolButton(FluentIcon.DELETE, self)
 
-        self._comboBox.addItems(label_text)
-        self._comboBox.setCurrentIndex(0)
+        self._comboBox.addItems(cl.get_all_labels())
+
+        self._comboBox.setCurrentText(self._case_label)
+
+        self._comboBox.currentTextChanged.connect(lambda text: self._set_case_label(text))
+
+        self._comboBox.clicked.connect(lambda: signalBus.selectItem.emit(self._id))
+        self._delButton.clicked.connect(lambda: signalBus.deleteItem.emit(self._id))
+        
+        cl.label_show_changed.connect(self._update_show)
+
+        self._update_show(self._case_label)
+
+
+        self.setAttribute(Qt.WA_StaticContents) # 静态内容：仅内容变化时才重绘
+        self.setAttribute(Qt.WA_NoSystemBackground)
 
         self._init_ui()
-
+    
     def _init_ui(self):
         
-        self.mainLayout = QVBoxLayout(self)
-        self.mainLayout.setSpacing(0)
-        self.mainLayout.setContentsMargins(0, 0, 0, 0)
-
-        view = QWidget(self)
-        view.setFixedSize(280, 100)
-
-
-        vBoxLayout = QVBoxLayout(view)
+        self.setFixedSize(280, 100)
+        vBoxLayout = QVBoxLayout(self)
         vBoxLayout.setSpacing(0)
         vBoxLayout.setContentsMargins(20, 0, 20, 0)
 
-        self._annotation_type.setFixedSize(70, 28)
-        self._comboBox.setFixedSize(170, 28)
+        self._annotation_type.setFixedSize(70, 32)
+        self._comboBox.setFixedSize(170, 32)
         
         type_layout = QHBoxLayout()
         type_layout.setSpacing(10)
@@ -72,47 +86,208 @@ class InfoCardItem(QWidget):
         vBoxLayout.addLayout(type_layout)
         vBoxLayout.addLayout(button_layout)
 
-        self.mainLayout.addWidget(view)
-        
-        view.setObjectName('view')
 
+    def _set_case_label(self, case_label: str):
+        self._case_label = case_label if case_label in cl.get_all_labels() else "default"
+        self._color = cl.get_color(case_label)
+        self._update_show(self._case_label)
+        signalBus.itemCaseLabelChanged.emit(self._id, self._case_label)
+    
+
+    def is_show(self) -> bool:
+        return self._is_show
+
+    def _update_show(self, label: str):
+        if label == self._case_label:
+            self._is_show = cl.is_show(label)
+            self.setVisible(self._is_show)
+
+    def setSelected(self, is_selected: bool):
+        if self.is_selected == is_selected:
+            return
+        self.is_selected = is_selected
+        self.update()
+
+    def paintEvent(self, event):
+
+        painter = QPainter(self)
         
+        rect_f = QRectF(self.rect().adjusted(1, 1, -1, -1))
+
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        if self.is_selected:
+            
+            selected_color = QColor(self._color)
+            selected_color.setAlpha(60) 
+        
+            painter.setBrush(QBrush(selected_color))
+            painter.setPen(QPen(self._color,1)) 
+        
+        else:
+            painter.setBrush(self._color)
+            painter.setPen(Qt.NoPen)
+
+        _radius = 6
+        
+        painter.drawRoundedRect(rect_f, _radius, _radius)
+
+        super().paintEvent(event)
+
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            signalBus.selectItem.emit(self._id)
+            return
+        
+        super().mousePressEvent(event)
+    
+
 class InfoCardInterface(ScrollArea):
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self._item = []
+        self._items = {}
+        self._currentRouteKey = None
+
+
+
+
+        self.scrollWidget = QWidget(self)
+        signalBus.deleteItem.connect(self.removeItem)
+        signalBus.selectItem.connect(self._set_current_item)
+        signalBus.addItem.connect(self.addItem)
+
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # 禁用水平滚动条
+
         self._init_ui()
 
     def _init_ui(self):
         
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # 禁用水平滚动条
         
-        mainLayout = QVBoxLayout(self)
-        mainLayout.setSpacing(10)
-        mainLayout.setContentsMargins(0,0,0,0)
-
-        view = QFrame(self)
-        self.vBoxLayout = QVBoxLayout(view)
+        self.vBoxLayout = QVBoxLayout(self.scrollWidget)
         self.vBoxLayout.setSpacing(10)
         self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
         self.vBoxLayout.setAlignment(Qt.AlignHCenter|Qt.AlignTop)
-        view.setObjectName('view')
+        
+        self.setViewportMargins(0, 0, 10, 0)
+        self.setWidgetResizable(True)
+        self.setWidget(self.scrollWidget)
 
-       
-        mainLayout.addWidget(view)
+        self.scrollWidget.setObjectName('scrollWidget')
+
         StyleSheet.ACCURACY_INTERFACE.apply(self)
     
     @property
-    def item(self):
-        return self._item
+    def items(self):
+        return self._items
 
-    def addItem(self,label_text : list[str], annotation_type:AnnotationType):
-        self._item.append(InfoCardItem(label_text, annotation_type, self))
-        self.addWidget(self._item[-1])
-
-
-    def addWidget(self, widget:InfoCardItem):
-        self.vBoxLayout.addWidget(widget)
+    def addItem(self,routeKey,caseLabel : str, annotation_type:AnnotationType,onClick=None):
+        return self.insertItem(-1, routeKey,caseLabel, annotation_type,onClick) 
 
 
+
+
+
+
+    def insertItem(self, index: int, routeKey: str,caseLabel : str, annotation_type:AnnotationType,onClick=None):
+        if routeKey in self.items:
+            return
+        widget = InfoCardItem(routeKey,caseLabel, annotation_type, self.scrollWidget)
+       
+        self.insertWidget(index, routeKey, widget, onClick)
+        return widget
+
+    def insertWidget(self, index: int, routeKey: str, widget: InfoCardItem, onClick=None):
+       
+        if routeKey in self.items:
+            return
+
+        widget.setProperty('routeKey', routeKey)
+        
+        self.items[routeKey] = widget
+        self.vBoxLayout.insertWidget(index, widget, 1)
+
+
+    def removeItem(self, routeKey: str):
+
+        if routeKey not in self.items:
+            return
+
+        widget = self.items[routeKey]
+        self.vBoxLayout.removeWidget(widget) # 从布局中移除部件
+        widget.deleteLater() # 删除部件
+        del self.items[routeKey]
+
+    def clear(self):
+        for routeKey in list(self.items.keys()):
+            self.removeItem(routeKey)
+    
+    def currentRouteKey(self):
+        return self._currentRouteKey
+
+
+    def _set_current_item(self, routeKey: str):
+
+        if routeKey not in self._items or routeKey == self._currentRouteKey:
+            return
+
+        self._currentRouteKey = routeKey
+
+        target_widget = self.items[routeKey]
+
+        for k, item in self._items.items():
+            item.setSelected(k == routeKey)
+
+        self.scrollToWidget(target_widget, scroll_align=Qt.AlignCenter)
+
+
+    def currentItem(self):
+        if self._currentRouteKey is None:
+            return None
+
+        return self.widget(self._currentRouteKey)
+    
+    def widget(self, routeKey: str):
+
+        print(routeKey)
+
+        if routeKey not in self.items:
+            raise Exception(f"`{routeKey}` is illegal.")
+        
+        return self.items[routeKey]
+    
+    def scrollToWidget(self, widget: InfoCardItem, scroll_align=Qt.AlignTop):
+        """
+        滚动到指定部件，并支持自定义对齐方式
+        :param widget: 目标部件
+        :param scroll_align: 对齐方式（Qt.AlignTop/Qt.AlignCenter/Qt.AlignBottom）
+        """
+        if not widget or widget not in self.items.values():
+            return
+        
+        #如果当前可见，无需滚动
+        if widget.isVisible():
+            return
+
+        
+        widget_rect = widget.geometry()
+        viewport_rect = self.viewport().rect()
+        scroll_bar = self.verticalScrollBar()
+        
+        if scroll_align == Qt.AlignCenter:
+            # 居中显示：计算滚动条目标值
+            target_y = widget_rect.top() - (viewport_rect.height() - widget_rect.height()) / 2
+        elif scroll_align == Qt.AlignBottom:
+            # 底部对齐
+            target_y = widget_rect.bottom() - viewport_rect.height()
+        else:
+            # 顶部对齐（默认）
+            target_y = widget_rect.top()
+        
+        target_y = max(0, min(target_y, scroll_bar.maximum()))
+        scroll_bar.setValue(int(target_y))
+        
+    
+ 

@@ -5,54 +5,33 @@ from PyQt5.QtGui import QImage, QPainter, QPen, QBrush, QPolygonF, QColor, QTran
 from PyQt5.QtCore import Qt, QSize, pyqtSignal, QPointF
 
 from QtUniversalToolFrameWork.components.widgets.image_canvas import ImageCanvas
+from QtUniversalToolFrameWork.common.style_sheet import themeColor
+
 from common.utils import Utils
-from common.json_structure_data import DataItemInfo
+from common.data_structure import DataItemInfo
 from common.annotation import AnnotationType,AnnotationFrameBase
 from common.polygon_clip import polygon_clipper
-
+from common.case_label import cl
+from common.data_control_manager import dm
 
 class PolygonsDrawImageCanvas(ImageCanvas):
-
-    split_vertex_created = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
 
-        self.shift_pressed = False
-
-        self.all_points_colors = [] 
-       
-        self.init_vars()
-
-    def init_vars(self):
-        
-        self.data_items = []
-
-        self.total_rotate_angle = 0
-
-        self.current_item_index = -1 
-
-        self.creating_data_item = False 
-        self.creating_split_vertex = False
-        self.annotion_frame = None
-
-        self.current_point_index = -1  # 当前选中的点索引
-
         self._dragging_vertex = False
-
-        self.split_item_index = -1 # 分割项索引
-
-        self.split_point_index_start = -1 # 分割点索引开始
-        self.split_point_index_end = -1 # 分割点索引结束
-        
-
         self._dragging_data_item = False # 是否正在拖动DataItem
         self._drag_start_pos = QPointF() # 拖动开始位置
         self._data_item_original_pos = [] # 每个DataItem的原始位置（QPointF列表）
 
+        dm.update_data_item.connect(self.update)
+
+        cl.label_show_changed.connect(lambda label: self.update())
+
         self.setMouseTracking(False)
         self.setCursor(Qt.ArrowCursor)
+
 
     def paintEvent(self, event):
 
@@ -66,55 +45,46 @@ class PolygonsDrawImageCanvas(ImageCanvas):
 
         self._draw_all_points(painter)
         
-        if self.creating_data_item:
-            self.annotion_frame.draw(painter, self.scale, self.offset, self._get_color(len(self.data_items)), self._rotate_point)
+        if dm.creating_data_item:
+
+            transparent_color = QColor(themeColor())
+            transparent_color.setAlpha(128)
+            painter.setBrush(QBrush(transparent_color, Qt.SolidPattern)) # 填充颜色
+
+            dm.annotion_frame.draw(painter, self.scale, self.offset, themeColor(), self._rotate_point)
             return
         
-        if self.creating_split_vertex:
-            self.annotion_frame.draw(painter, self.scale, self.offset, self._get_color(self.split_item_index), self._rotate_point)
+        if dm.creating_split_vertex:
+                
+            label = dm.get_current_data_item_label()
+
+            dm.annotion_frame.draw(painter, self.scale, self.offset, cl.get_color(label), self._rotate_point)
+        
             return
 
-    def _get_color(self, index : int):
-        """获取指定索引的颜色"""
-
-        if 0 <= index < len(self.all_points_colors):
-            color = self.all_points_colors[index]
-        else:
-            color = Utils.generate_random_color()
-            self.all_points_colors.append(color)
-        return color
 
     def _draw_all_points(self, painter : QPainter):
 
-        items = self.data_items
+        items = dm.data_items
 
         for i, item in enumerate(items): 
-
-            rotated_points = [self._rotate_point(point) for point in item.points]
-
-            new_points = [QPointF(point.x() * self.scale + self.offset.x(), 
-                            point.y() * self.scale + self.offset.y()) 
-                    for point in rotated_points]
             
-            color = self._get_color(i)
-
-            painter.setPen(QPen(color, 2))
+            if not cl.is_show(item.caseLabel):
+                continue
+            
+            color = cl.get_color(item.caseLabel)
 
             transparent_color = QColor(color)
 
-            if i == self.current_item_index and not self.creating_data_item and not self.creating_split_vertex:
+            if i == dm.current_item_index and not dm.creating_data_item and not dm.creating_split_vertex:
                 transparent_color.setAlpha(128)
             else:
                 transparent_color.setAlpha(20)
 
             painter.setBrush(QBrush(transparent_color, Qt.SolidPattern)) # 填充颜色
-            
-            if len(new_points) >= 3:
-                painter.drawPolygon(QPolygonF(new_points)) # 绘制多边形
-            
-            painter.setBrush(QBrush(color, Qt.SolidPattern))
-            for point in new_points:
-                painter.drawEllipse(point, 3, 3)
+
+            annotation_frame = AnnotationFrameBase.create(item.annotation_type)
+            annotation_frame.draw(painter, self.scale, self.offset, color,self._rotate_point,item.points)
 
     def _rotate_point(self, point: QPointF) -> QPointF:
         """对单个点应用旋转变换（围绕图片中心）"""
@@ -177,8 +147,8 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         if not self.original_pixmap:
             return
 
-        self.current_item_index = -1
-        self.current_point_index = -1
+        dm.current_item_index = -1
+        dm.current_point_index = -1
 
         current_point = event.pos()
 
@@ -188,15 +158,15 @@ class PolygonsDrawImageCanvas(ImageCanvas):
 
         clamped_point = self._is_point_in_pixmap(clamped_point)
      
-        if self.creating_data_item and event.button() == Qt.LeftButton:
+        if dm.creating_data_item and event.button() == Qt.LeftButton:
             self._add_create_data_item_point(current_point)
             return
 
-        if self.shift_pressed and event.button() == Qt.LeftButton:
+        if dm.shift_pressed and event.button() == Qt.LeftButton:
             self._add_vertex_to_data_item(clamped_point)
             return
 
-        if self.creating_split_vertex and event.button() == Qt.LeftButton:
+        if dm.creating_split_vertex and event.button() == Qt.LeftButton:
             self._add_split_vertex_to_data_item(clamped_point)
             return
 
@@ -204,24 +174,26 @@ class PolygonsDrawImageCanvas(ImageCanvas):
 
             item_idx, vertex_idx = self._check_vertex_click(clamped_point)
             if item_idx != -1 and vertex_idx != -1:
-                self.current_item_index = item_idx
-                self.current_point_index = vertex_idx
+                dm.current_item_index = item_idx
+                dm.current_point_index = vertex_idx
                 self._dragging_vertex = True 
+                self.update()
                 return
 
             item_idx = self._check_poly_click(clamped_point)
             if item_idx != -1:
-                self.current_item_index = item_idx
+                dm.current_item_index = item_idx
                 self._dragging_data_item = True
                 self._drag_start_pos = clamped_point
-                self._data_item_original_pos = [QPointF(p.x(), p.y()) for p in self.data_items[item_idx].points]
+                self._data_item_original_pos = [QPointF(p.x(), p.y()) for p in dm.data_items[item_idx].points]
+                self.update()
                 return
 
         super().mousePressEvent(event)
 
     def _check_poly_edge_click(self,clamped_point) -> tuple:
         """检查是否点击了多边形边"""
-        items = self.data_items
+        items = dm.data_items
         threshold = 3 / self.scale
         min_dist = float("inf") 
         item_idx = -1 
@@ -247,7 +219,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         else:
             return (-1,-1)
 
-    def _get_intersection_point(self, item_idx: int, start_point: QPointF, end_point: QPointF) -> tuple[int, Optional[QPointF]]:
+    def _get_intersection_point(self, item: DataItemInfo, start_point: QPointF, end_point: QPointF) -> tuple[int, Optional[QPointF]]:
         """
         查找线段与指定图形边的交点（排除起点）
         
@@ -259,10 +231,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         Returns:
             元组(最近边索引+1, 交点坐标)，无有效交点返回(-1, None)
         """
-        if item_idx < 0 or item_idx >= len(self.data_items):
-            raise IndexError(f"item_idx {item_idx} 超出数据范围（有效范围：0-{len(self.data_items)-1}）")
 
-        item = self.data_items[item_idx]
         points = item.points
         num_points = len(points)
 
@@ -293,10 +262,10 @@ class PolygonsDrawImageCanvas(ImageCanvas):
 
     def _get_closest_point_index_and_edge(self, item_idx: int,point: QPointF) -> QPointF:
         """ 查找点到指定图形边的最近距离点"""
-        if item_idx < 0 or item_idx >= len(self.data_items):
+        if item_idx < 0 or item_idx >= len(dm.data_items):
             raise IndexError(f"item_idx {item_idx} 超出数据范围")
 
-        item = self.data_items[item_idx]
+        item = dm.data_items[item_idx]
         points = item.points
         num_points = len(points)
 
@@ -327,7 +296,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
     def _check_vertex_click(self, clamped_point:QPointF) -> tuple:
         """检查是否点击了顶点"""
 
-        items = self.data_items
+        items = dm.data_items
 
         threshold = 10 / self.scale
 
@@ -341,7 +310,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         return (-1,-1)
 
     def _check_poly_click(self, clamped_point) -> int:
-        items = self.data_items
+        items = dm.data_items
         
         # 从后往前检查，确保后绘制的多边形优先被选中
         for i, item in enumerate(items):
@@ -365,7 +334,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         clamped_point = self._convert_to_original_coords(current_point)
         clamped_point = self._rotate_point_back(clamped_point)
 
-        self.annotion_frame.add_point(clamped_point)
+        dm.annotion_frame.add_point(clamped_point)
                 
         self.update()
 
@@ -375,23 +344,23 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         item_idx, best_edge_idx = self._check_poly_edge_click(clamped_point)
         
         if item_idx != -1 and best_edge_idx != -1:
-            item = self.data_items[item_idx]
+            item = dm.data_items[item_idx]
             item.insert_point(best_edge_idx, clamped_point)
-            self.current_point_index = best_edge_idx
-            self.current_item_index = item_idx
+            dm.current_point_index = best_edge_idx
+            dm.current_item_index = item_idx
             self.update()
     
     def _add_split_vertex_to_data_item(self, clamped_point):
 
 
         def reset_split_state():
-            self.annotion_frame = AnnotationFrameBase.create(AnnotationType.POINT)
-            self.split_point_index_start = -1
-            self.split_point_index_end = -1
+            dm.annotion_frame = AnnotationFrameBase.create(AnnotationType.POINT)
+            dm.split_point_index_start = -1
+            dm.split_point_index_end = -1
 
-            self.split_item_index = -1
+            dm.split_item_index = -1
 
-        if self.split_item_index == -1:
+        if dm.split_item_index == -1:
 
             item_idx, _ = self._check_poly_edge_click(clamped_point)
             
@@ -401,24 +370,24 @@ class PolygonsDrawImageCanvas(ImageCanvas):
 
                 best_edge_idx,closest_point = self._get_closest_point_index_and_edge(item_idx, clamped_point)
 
-                self.split_point_index_start = best_edge_idx
-                self.split_item_index = item_idx
-                self.annotion_frame.add_point(closest_point)
+                dm.split_point_index_start = best_edge_idx
+                dm.split_item_index = item_idx
+                dm.annotion_frame.add_point(closest_point)
         
         else:
             item_idx = self._check_poly_click(clamped_point)
             if item_idx == -1:
                 print("没有点击到多边形")
-                best_edge_idx,closest_point = self._get_intersection_point(self.split_item_index,self.annotion_frame.points[-1], clamped_point)
+                best_edge_idx,closest_point = self._get_intersection_point(dm.data_items[dm.split_item_index],dm.annotion_frame.points[-1], clamped_point)
                 if closest_point is None:
                     raise ValueError("未找到与分割线相交的点")
                 else:
-                    self.split_point_index_end = best_edge_idx
-                    self.annotion_frame.add_point(closest_point)
+                    dm.split_point_index_end = best_edge_idx
+                    dm.annotion_frame.add_point(closest_point)
 
-                self.split_vertex_created.emit()
+                dm.split_vertex_created.emit()
             else:
-                self.annotion_frame.add_point(clamped_point)
+                dm.annotion_frame.add_point(clamped_point)
         
         self.update()
 
@@ -434,20 +403,19 @@ class PolygonsDrawImageCanvas(ImageCanvas):
             self._drag_poly(current_point)
             return
 
-        if self.creating_data_item:
+        if dm.creating_data_item:
             self._build_annotation_frame(current_point)
             return
         
-        if self.creating_split_vertex and self.split_item_index != -1:
+        if dm.creating_split_vertex and dm.split_item_index != -1:
             self._build_annotation_frame(current_point)
             return
-   
 
         super().mouseMoveEvent(event)
 
     def _drag_vertex(self, current_point):
         """拖动顶点"""
-        if self.current_item_index < 0 or self.current_point_index < 0:
+        if dm.current_item_index < 0 or dm.current_point_index < 0:
             return
         
 
@@ -460,15 +428,15 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         
         
 
-        item = self.data_items[self.current_item_index]
-        item.points[self.current_point_index] = clamped_point
+        item = dm.current_data_item
+        item.points[dm.current_point_index] = clamped_point
 
         self.update()    
 
     def _drag_poly(self, current_point):
         """拖动整个多边形"""
         
-        if self.current_item_index < 0 or not self.original_pixmap:
+        if not dm.is_current_data_item_valid():
             return
         
 
@@ -479,7 +447,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         dx = current_point.x() - self._drag_start_pos.x()
         dy = current_point.y() - self._drag_start_pos.y()
     
-        item = self.data_items[self.current_item_index]
+        item = dm.current_data_item
 
         new_poly = []
         for point in self._data_item_original_pos:
@@ -498,23 +466,22 @@ class PolygonsDrawImageCanvas(ImageCanvas):
 
         clamped_point = self._rotate_point_back(clamped_point)
 
-        self.annotion_frame.set_temp_point(clamped_point) 
+        dm.annotion_frame.set_temp_point(clamped_point) 
 
         self.update()
 
     def finish_create_frame_coords(self) -> list[QPointF]:
 
-        if not self.annotion_frame:
+        if not dm.annotion_frame:
             return None
         
-        points = self.annotion_frame.points
+        points = dm.annotion_frame.points
 
-        if len(points) < 3:
-            print("DataItem至少需要3个顶点")
+        if not dm.annotion_frame.verify_points():
+            print("多边形坐标数量异常")
             return None
         
-        self.creating_data_item = False
-        self.annotion_frame = AnnotationFrameBase.create(AnnotationType.POLYGON)
+        dm.creating_data_item = False
         self.setMouseTracking(False)
         self.setCursor(Qt.ArrowCursor)
 
@@ -526,52 +493,51 @@ class PolygonsDrawImageCanvas(ImageCanvas):
     
     def finish_create_split_vertex(self):
         
-        points = self.data_items[self.split_item_index].points
+        points = dm.data_items[dm.split_item_index].points
 
         item_data_1 = []
 
-        if self.split_point_index_start > self.split_point_index_end:
+        if dm.split_point_index_start > dm.split_point_index_end:
 
-            item_data_1.extend(points[0:self.split_point_index_end])
-            item_data_1.extend(self.annotion_frame.points[::-1])
-            item_data_1.extend(points[self.split_point_index_start:])
+            item_data_1.extend(points[0:dm.split_point_index_end])
+            item_data_1.extend(dm.annotion_frame.points[::-1])
+            item_data_1.extend(points[dm.split_point_index_start:])
 
-        elif self.split_point_index_start == self.split_point_index_end:
+        elif dm.split_point_index_start == dm.split_point_index_end:
             
-            item_data_1.extend(points[0:self.split_point_index_end])
+            item_data_1.extend(points[0:dm.split_point_index_end])
 
 
-            if Utils.compare_points_on_line(self.annotion_frame.points[0],self.annotion_frame.points[-1],
-                                            points[self.split_point_index_end-1],points[self.split_point_index_end if self.split_point_index_end < len(points)-1 else 0])==-1:
+            if Utils.compare_points_on_line(dm.annotion_frame.points[0],dm.annotion_frame.points[-1],
+                                            points[dm.split_point_index_end-1],points[dm.split_point_index_end if dm.split_point_index_end < len(points)-1 else 0])==-1:
 
-                item_data_1.extend(self.annotion_frame.points)
+                item_data_1.extend(dm.annotion_frame.points)
             else:
-                item_data_1.extend(self.annotion_frame.points[::-1])
+                item_data_1.extend(dm.annotion_frame.points[::-1])
 
-            item_data_1.extend(points[self.split_point_index_end:])
+            item_data_1.extend(points[dm.split_point_index_end:])
         else :
-             item_data_1.extend(points[0:self.split_point_index_start])
-             item_data_1.extend(self.annotion_frame.points)
-             item_data_1.extend(points[self.split_point_index_end:])
+             item_data_1.extend(points[0:dm.split_point_index_start])
+             item_data_1.extend(dm.annotion_frame.points)
+             item_data_1.extend(points[dm.split_point_index_end:])
 
 
 
         item_data_2 = []
 
-        if self.split_point_index_start > self.split_point_index_end:
-            item_data_2.extend(self.annotion_frame.points)
-            item_data_2.extend(points[self.split_point_index_end:self.split_point_index_start])
-        elif self.split_point_index_start == self.split_point_index_end:
-            item_data_2 = self.annotion_frame.points
+        if dm.split_point_index_start > dm.split_point_index_end:
+            item_data_2.extend(dm.annotion_frame.points)
+            item_data_2.extend(points[dm.split_point_index_end:dm.split_point_index_start])
+        elif dm.split_point_index_start == dm.split_point_index_end:
+            item_data_2 = dm.annotion_frame.points
         else:
-            item_data_2.extend(self.annotion_frame.points[::-1])
-            item_data_2.extend(points[self.split_point_index_start:self.split_point_index_end])
+            item_data_2.extend(dm.annotion_frame.points[::-1])
+            item_data_2.extend(points[dm.split_point_index_start:dm.split_point_index_end])
 
 
-        del self.data_items[self.split_item_index]
-        del self.all_points_colors[self.split_item_index]
-        self.creating_split_vertex = False
-        self.annotion_frame = AnnotationFrameBase.create(AnnotationType.POLYGON)
+        dm.delete_data_item_by_index(dm.split_item_index)
+        dm.creating_split_vertex = False
+        dm.annotion_frame = AnnotationFrameBase.create(AnnotationType.POLYGON)
         self.setMouseTracking(False)
         self.setCursor(Qt.ArrowCursor)
         return (item_data_1, item_data_2)
