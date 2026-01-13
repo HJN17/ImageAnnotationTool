@@ -1,8 +1,44 @@
 import random
+from typing import List, Optional
 from PyQt5.QtGui import QColor, QGuiApplication
 from PyQt5.QtCore import QPointF
 import math
 class Utils:
+
+    @staticmethod
+    def get_rectangle_points(points: list[QPointF]): # 计算矩形的四个顶点
+
+        if len(points) != 2:
+            print("矩形顶点数量不等于2")
+            return []
+        
+
+        p1 = points[0]
+        p2 = points[1]
+    
+        x1 = p1.x()
+        y1 = p1.y()
+        x2 = p2.x()
+        y2 = p2.y()
+
+        point_1 = QPointF(min(x1, x2), min(y1, y2))  # 左下角
+        point_2 = QPointF(min(x1, x2), max(y1, y2))  # 左上角
+        point_3 = QPointF(max(x1, x2), max(y1, y2))  # 右上角
+        point_4 = QPointF(max(x1, x2), min(y1, y2))  # 右下角
+        return [point_1, point_2, point_3, point_4]
+
+    @staticmethod
+    def get_rectangle_vertices(points: list[QPointF]): # 得到矩形的两个对角点
+        if len(points) != 4:
+            print("矩形顶点数量不等于4")
+            return []
+        
+        min_x = min(point.x() for point in points)
+        max_x = max(point.x() for point in points)
+        min_y = min(point.y() for point in points)
+        max_y = max(point.y() for point in points)
+        return [QPointF(min_x, min_y), QPointF(max_x, max_y)]
+        
 
     @staticmethod
     def point_to_line_distance(point: QPointF, line_p1: QPointF, line_p2: QPointF) -> float:
@@ -28,6 +64,47 @@ class Utils:
         # 计算距离
         return math.hypot(x0 - proj_x, y0 - proj_y)
 
+    @staticmethod
+    def get_intersection_point(points: list[QPointF], start_point: QPointF, end_point: QPointF) -> tuple[int, Optional[QPointF]]:
+        """
+        查找线段与指定图形边的交点（排除起点）
+        
+        Args:
+            item_idx: 数据项索引
+            start_point: 线段起点
+            end_point: 线段终点
+            
+        Returns:
+            元组(最近边索引+1, 交点坐标)，无有效交点返回(-1, None)
+        """
+
+       
+        num_points = len(points)
+
+        if num_points < 2:
+            return (-1, None)
+
+        def is_start_point(point: QPointF, threshold: float = 1e-6) -> bool:
+            """判断点是否为起点（增加浮点精度阈值）"""
+            dx = abs(point.x() - start_point.x())
+            dy = abs(point.y() - start_point.y())
+            return dx < threshold and dy < threshold
+
+        best_edge_idx = -1
+        intersection_point = None
+        
+        for j in range(num_points):
+            p1 = points[j]
+            p2 = points[(j + 1) % num_points]
+
+            current_intersection = Utils.line_intersection(p1, p2, start_point, end_point)
+            
+            if current_intersection is not None and not is_start_point(current_intersection):
+                best_edge_idx = j
+                intersection_point = current_intersection
+                break 
+
+        return (best_edge_idx + 1) if best_edge_idx != -1 else -1, intersection_point
 
     @staticmethod
     def get_closest_point_on_line_segment(point: QPointF, line_p1: QPointF, line_p2: QPointF) -> QPointF:
@@ -46,6 +123,37 @@ class Utils:
         
         return QPointF(x1 + t * dx, y1 + t * dy)
     
+    @staticmethod
+    def get_closest_point_index_and_edge(points: List[QPointF],point: QPointF) -> QPointF:
+        """ 查找点到指定图形边的最近距离点"""
+       
+        num_points = len(points)
+
+        if num_points < 2:
+            return points[0] if num_points == 1 else point  # 无点返回原坐标，单点返回自身
+
+
+        min_dist = float("inf")
+        best_edge_idx = 0 
+
+        for j in range(num_points):
+            p1 = points[j]
+            p2 = points[(j + 1) % num_points]
+
+            dist = Utils.point_to_line_distance(point, p1, p2)
+            
+            if dist < min_dist:
+                min_dist = dist
+                best_edge_idx = j  # 关键修正：直接记录边的起始索引j
+
+        edge_p1 = points[best_edge_idx]
+        edge_p2 = points[(best_edge_idx + 1) % num_points]
+
+        
+        closest_point = Utils.get_closest_point_on_line_segment(point, edge_p1, edge_p2)
+        return best_edge_idx + 1,closest_point
+
+
 
     @staticmethod
     def line_intersection(p1: QPointF, p2: QPointF, p3: QPointF, p4: QPointF) -> QPointF:

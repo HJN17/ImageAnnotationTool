@@ -75,29 +75,33 @@ class PivotStacked(QWidget):
     def show_info_card_interface(self,key:str,data_items:list):
         self.annotationInterface.show_info_card_interface(key,data_items)
 
+    def hide_info_card_interface(self):
+        self.annotationInterface.hide_info_card_interface()
+
     def create_info_card_interface(self,key:str,data_items:list):
         return self.annotationInterface.create_info_card_interface(key,data_items)
 
-
 class StackedInfoCardInterface(QWidget):
 
-    def __init__(self, parent=None, batch_size=20):
+    def __init__(self, parent=None, capacity=20):
         super().__init__(parent)
         
+        self._default_widget = InfoCardInterface()
+
         self._temp_widget = InfoCardInterface()
         
-        self._cache = LRUCache(capacity=batch_size*2)
+        self._cache = LRUCache(capacity=capacity*2)
 
         self.main_layout = QVBoxLayout(self) 
         
         self.main_layout.setContentsMargins(0, 0, 0, 0) 
         self.main_layout.setSpacing(0)
         
-       
         self.main_layout.addWidget(self._temp_widget)
         
         self.setLayout(self.main_layout)
 
+        StyleSheet.ACCURACY_INTERFACE.apply(self)
 
     def create_info_card_interface(self,key:str,data_items:list):
 
@@ -107,6 +111,8 @@ class StackedInfoCardInterface(QWidget):
             return infoCard
 
         infoCard = InfoCardInterface(self)
+        #背景透明
+        
         sorted_items = natsorted(data_items, key=lambda x: (cl.get_label_name(x.caseLabel)=="default", x.caseLabel)) # 先排序默认标签，再排序其他标签
 
         for item in sorted_items: 
@@ -121,10 +127,16 @@ class StackedInfoCardInterface(QWidget):
 
         infoCard = self.create_info_card_interface(key,data_items)
         
-        self.replace_temp_widget(infoCard)
+        self._replace_temp_widget(infoCard)
 
 
-    def replace_temp_widget(self,widget:InfoCardInterface):
+    def hide_info_card_interface(self):
+        self._replace_temp_widget(self._default_widget)
+
+    def _replace_temp_widget(self,widget:InfoCardInterface):
+        
+        widget.setStyleSheet("background-color: transparent;")
+
         self.main_layout.replaceWidget(self._temp_widget,widget) # 替换临时widget为infoCard
         self._temp_widget.hide() # 隐藏临时widget
         widget.show()

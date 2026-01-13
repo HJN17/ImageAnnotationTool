@@ -8,6 +8,7 @@ from PyQt5.QtGui import QColor, QPainter, QBrush, QPen, QFont
 from QtUniversalToolFrameWork.common.font import getFont
 from QtUniversalToolFrameWork.common.icon import FluentIcon
 from QtUniversalToolFrameWork.common.color import ThemeBackgroundColor
+from QtUniversalToolFrameWork.common.style_sheet import setShadowEffect
 from QtUniversalToolFrameWork.components.widgets import ScrollArea
 from QtUniversalToolFrameWork.components.layout import ExpandLayout
 from QtUniversalToolFrameWork.components.widgets.label import CardLabel
@@ -20,6 +21,28 @@ from common.case_label import cl
 from common.signal_bus import signalBus
 
 
+class InfoCardComboBox(ComboBox):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._text = ""
+
+    def _set_temp_text(self, text: str):
+        self._text = text
+
+    def removeItem(self, index: int):
+        if not 0 <= index < len(self.items):
+            return
+
+        self.items.pop(index)
+
+        self.setCurrentText(self._text)
+        
+        if self.count() == 0:
+            self.clear()
+
+
+
 class InfoCardItem(QWidget):
 
     def __init__(self,routeKey:str,caseLabel : str, annotation_type:AnnotationType, parent=None):
@@ -27,11 +50,12 @@ class InfoCardItem(QWidget):
 
         self._id = routeKey
         self._color = cl.get_color(caseLabel)
+        self._original_case_label = caseLabel
         self._case_label = caseLabel if caseLabel in cl.get_all_labels() else "default"
         self.is_selected = False
 
         self._annotation_type = CardLabel(annotation_type.value.upper(), self)
-        self._comboBox = ComboBox(self)
+        self._comboBox = InfoCardComboBox(self)
 
         self._is_show = True
 
@@ -44,6 +68,11 @@ class InfoCardItem(QWidget):
 
         self._comboBox.setCurrentText(self._case_label)
 
+
+        cl.add_label_changed.connect(self._add_comboBox_item)
+        cl.del_label_changed.connect(self._del_comboBox_item)
+        cl.label_color.connect(self._update_color)
+
         self._comboBox.currentTextChanged.connect(lambda text: self._set_case_label(text))
         self._comboBox.currentTextChanged.connect(self.update)
 
@@ -52,11 +81,12 @@ class InfoCardItem(QWidget):
         
         cl.label_show_changed.connect(self._update_show)
 
+    
         self._update_show(self._case_label)
-
 
         self.setAttribute(Qt.WA_StaticContents) # 静态内容：仅内容变化时才重绘
         self.setAttribute(Qt.WA_NoSystemBackground)
+
 
         self._init_ui()
     
@@ -88,8 +118,39 @@ class InfoCardItem(QWidget):
         vBoxLayout.addLayout(button_layout)
 
 
+    def _update_color(self, label: str):
+        if label == self._case_label:
+            self._color = cl.get_color(label)
+            self.update()
+
+    def _add_comboBox_item(self, label: str):
+        
+        self._comboBox.addItem(label)
+
+        if self._original_case_label == label:
+            self._set_case_label(label)
+            self._comboBox.setCurrentText(label)
+        
+
+    def _del_comboBox_item(self, label: str):
+
+        index = self._comboBox.findText(label)
+        if index != -1:
+            
+            if self._case_label == label:
+                self._set_case_label("default")
+                self._comboBox._set_temp_text("default")
+
+            self._comboBox.removeItem(index)
+
+
     def _set_case_label(self, case_label: str):
+
         self._case_label = case_label if case_label in cl.get_all_labels() else "default"
+
+        if self._case_label != "default":
+            self._original_case_label = case_label
+
         self._color = cl.get_color(case_label)
         self._update_show(self._case_label)
         signalBus.itemCaseLabelChanged.emit(self._id, self._case_label)
@@ -98,7 +159,7 @@ class InfoCardItem(QWidget):
     def is_show(self) -> bool:
         return self._is_show
 
-    def _update_show(self, label: str):
+    def _update_show(self, label: str): 
         if label == self._case_label:
             self._is_show = cl.is_show(label)
             self.setVisible(self._is_show)

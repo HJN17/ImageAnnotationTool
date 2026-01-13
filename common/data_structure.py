@@ -10,14 +10,15 @@ import time
 import threading
 from collections import defaultdict 
 from copy import deepcopy
-
+from common.utils import Utils
 class DataItemInfo:
     def __init__(self,id : str,language : str = "", annotation_type : AnnotationType = AnnotationType.DEFAULT, caseLabel : str = "",points : list[QPointF] = [],):
+
         self._id = id
         self._language = language
         self._annotation_type = annotation_type
         self._caseLabel = caseLabel
-        self._points = points  
+        self._points = self.validate_points(points)
 
     @property
     def id(self) -> str:
@@ -37,8 +38,33 @@ class DataItemInfo:
     
     @property
     def points(self) -> list[QPointF]:
+
+        if self._annotation_type == AnnotationType.BBOX:
+            return Utils.get_rectangle_points(self._points)
+
         return self._points
-            
+    
+    @property
+    def origin_points(self) -> list[QPointF]:
+        return self._points
+
+    #验证points是否符合annotation_type
+    def validate_points(self, points : list[QPointF]):
+
+        if not points:
+            raise ValueError("points不能为空")
+        if self._annotation_type == AnnotationType.BBOX:
+            if len(points) != 2:
+                raise ValueError("BBOX应为2个点")
+        if self._annotation_type == AnnotationType.POLYGON or self._annotation_type == AnnotationType.DEFAULT:
+            if len(points) < 3:
+                raise ValueError("多边形需要3个点以上")
+        if self._annotation_type == AnnotationType.LINE:
+            if len(points) < 2:
+                raise ValueError("线需要2个点以上")
+        
+        return points
+
     @id.setter
     def id(self, value : str):
         self._id = value
@@ -57,6 +83,11 @@ class DataItemInfo:
     
     @points.setter
     def points(self, value : list[QPointF]):
+        
+        if self._annotation_type == AnnotationType.BBOX:
+            self._points =  Utils.get_rectangle_vertices(value)
+            return
+        
         self._points = value
 
     def insert_point(self, index : int, point : QPointF = QPointF()):
@@ -68,11 +99,11 @@ class DataItemInfo:
     
     def to_dict(self):
         return {
-            "id": self.id,
-            "language": self.language,
-            "annotation_type": self.annotation_type.value,
-            "caseLabel": self.caseLabel,
-            "points": [[p.x(),p.y()] for p in self.points]
+            "id": self._id,
+            "language": self._language,
+            "annotation_type": self._annotation_type.value,
+            "caseLabel": self._caseLabel,
+            "points": [[p.x(),p.y()] for p in self._points]
         }
 
 class  DataInfo:

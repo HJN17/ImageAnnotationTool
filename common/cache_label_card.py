@@ -32,7 +32,6 @@ class LabelCardManager(QObject):
         if data_info:
             return data_info
         
-        
         image_name = os.path.basename(key).split(".")[0]
         json_path = os.path.join(os.path.dirname(key), f"{image_name}.json")
 
@@ -44,12 +43,11 @@ class LabelCardManager(QObject):
         
         return data_info
     
-
+    
     def _stop_preload(self):
         if self._load_worker and self._load_worker.isRunning():
             self._load_worker.stop()
             self._load_worker.wait()
-
 
     def _preload_next_batch(self,image_items:list,current_index:int):
         
@@ -60,7 +58,6 @@ class LabelCardManager(QObject):
         current_batch_paths = image_items[next_batch_start:next_batch_end]
 
         paths_to_preload = [p for p in current_batch_paths if p not in self._cache.cache.keys()]
-
 
         if paths_to_preload:
     

@@ -31,6 +31,15 @@ from common.case_label import cl
 from common.icon import icon
 from components.pivot_stacked import PivotStacked
 
+
+
+
+
+
+
+
+
+
 class AccuracyInterface(QWidget):
     """OCR精度调整工具模块，用于调整OCR识别区域的多边形标注"""
 
@@ -76,7 +85,7 @@ class AccuracyInterface(QWidget):
 
         signalBus.splitPolygonFunction.connect(self._on_m_pressed)
 
-        dm.split_vertex_created.connect(self._finish_create_split_vertex)
+        dm.split_vertex_created.connect(self._finish_split_data_item)
 
         self.init_ui()
 
@@ -216,9 +225,12 @@ class AccuracyInterface(QWidget):
 
         dm.init_vars()
 
-        if self._show_annotations_action.isChecked():
+        if self._show_annotations_action.isChecked(): # 显示标注
             dm.init_data_items()
             self._pivot_stacked.show_info_card_interface(self._image_manager.current_item,dm.data_items)
+            return
+        
+        self._pivot_stacked.hide_info_card_interface()
         
     def _load_annotations(self):
         """加载标注数据"""
@@ -231,6 +243,23 @@ class AccuracyInterface(QWidget):
 
         self._on_show_annotations_toggled()
 
+    def _save_annotations(self):
+
+        if not dm.data_info:
+            return
+        
+        image_name = os.path.basename(self._image_manager.current_item)
+        json_path = os.path.join(os.path.dirname(self._image_manager.current_item), f"{image_name.split('.')[0]}.json")
+
+        dm.data_info.file_name = image_name
+        dm.data_info.label = ""
+        dm.data_info.issues = []
+
+        try:
+            jsonFileManager.save_json(json_path, dm.data_info)
+        except Exception as e:
+            print(f"保存标注失败: {str(e)}")
+            return
 
     @pyqtSlot(str)
     def _on_search_signal(self, search_text: str):
@@ -276,6 +305,12 @@ class AccuracyInterface(QWidget):
 
         if not points:
             return
+        
+        points = Utils.get_rectangle_vertices(points)
+       
+        if not points:
+            return
+
 
         new_data_item = DataItemInfo(
             id=str(uuid.uuid4()),
@@ -284,12 +319,12 @@ class AccuracyInterface(QWidget):
             caseLabel="default",
             points=points
         )
-
+        
         dm.add_data_item(new_data_item)
 
-    def _finish_create_split_vertex(self):
-    
-        item_data_1, item_data_2 = self._image_canvas.finish_create_split_vertex()
+    def _finish_split_data_item(self):
+        
+        item_data_1,item_data_2 = self._image_canvas.finish_split_frame_coords()
 
         if item_data_1:
 
@@ -313,7 +348,7 @@ class AccuracyInterface(QWidget):
                 points=item_data_2
             )
             dm.add_data_item(new_data_item_2)
-        
+    
     def _clear_all_data_items(self):
         if not dm.is_current_data_item_valid():
             return
@@ -321,23 +356,7 @@ class AccuracyInterface(QWidget):
         dm.data_info = DataInfo(file_name=dm.data_info.file_name, items=[])
         dm.init_vars()
         
-    def _save_annotations(self):
-
-        if not dm.data_info:
-            return
-        
-        image_name = os.path.basename(self._image_manager.current_item)
-        json_path = os.path.join(os.path.dirname(self._image_manager.current_item), f"{image_name.split('.')[0]}.json")
-
-        dm.data_info.file_name = image_name
-        dm.data_info.label = ""
-        dm.data_info.issues = []
-
-        try:
-            jsonFileManager.save_json(json_path, dm.data_info)
-        except Exception as e:
-            print(f"保存标注失败: {str(e)}")
-            return
+    
     
     def _on_shift_pressed(self, pressed):
 
@@ -355,7 +374,6 @@ class AccuracyInterface(QWidget):
             if dm.delete_current_point() == 2:
                 print("DataItem至少需要3个顶点")
              
-
     def _on_n_pressed(self, pressed):
 
         if pressed:
@@ -368,6 +386,7 @@ class AccuracyInterface(QWidget):
                 dm.annotion_frame = AnnotationFrameBase.create(self._annotation_type)
                 self._image_canvas.setMouseTracking(True)
                 self._image_canvas.setCursor(Qt.BlankCursor) # 隐藏鼠标光标
+                
                 
         elif dm.creating_data_item:
             print("取消创建DataItem")
@@ -384,6 +403,8 @@ class AccuracyInterface(QWidget):
             dm.creating_split_vertex = True
             dm.split_item_index = -1
             dm.annotion_frame = AnnotationFrameBase.create(AnnotationType.LINE)
+
+            print(f"创建SplitVertex: {dm.annotion_frame.__class__.__name__}")
 
             self._image_canvas.setMouseTracking(True)
             self._image_canvas.setCursor(Qt.PointingHandCursor)
@@ -415,7 +436,6 @@ class AccuracyInterface(QWidget):
         
         super().keyReleaseEvent(event)
 
-
     @pyqtSlot(int)
     def _on_progress_changed(self, value: int):
         self._image_manager.go_to(value-1)
@@ -433,7 +453,6 @@ class AccuracyInterface(QWidget):
                     parent = self,
                     aniType = FlyoutAnimationType.DROP_DOWN)
         
-
     def resizeEvent(self, e):
         super().resizeEvent(e)
 

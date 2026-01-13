@@ -32,7 +32,7 @@ class DataManager(QObject):
         
         signalBus.selectItem.connect(self._on_select_item)
         signalBus.itemCaseLabelChanged.connect(self._on_item_case_label_changed)
-        signalBus.deleteItem.connect(self._on_delete_item)
+        signalBus.deleteItem.connect(self.delete_data_item_by_key)
 
 
         self.init_vars()
@@ -73,6 +73,9 @@ class DataManager(QObject):
         if index < 0 or index >= len(self.data_items):
             return
         
+        if self.current_item_index == index:
+            return
+        
         self._current_item_index = index
         signalBus.selectItem.emit(self.data_items[index].id)
     
@@ -83,12 +86,6 @@ class DataManager(QObject):
         
         return self.data_items[self.current_item_index]
 
-    def _on_delete_item(self, routeKey: str):
-
-        if not self.is_current_data_item_valid():
-            return
-        
-        self.delete_data_item_by_key(routeKey)
 
     def _on_select_item(self, routeKey: str):
 
@@ -110,6 +107,7 @@ class DataManager(QObject):
         self.update_data_item.emit()
 
     def _on_item_case_label_changed(self, routeKey: str, caseLabel: str):
+
         if not self.is_current_data_item_valid():
             return
         
@@ -117,11 +115,12 @@ class DataManager(QObject):
             return
         
         self.current_data_item.caseLabel = caseLabel
+
         self.update_data_item.emit()
 
 
     def get_data_item_by_key(self, routeKey: str) -> DataItemInfo:
-        if not self.is_current_data_item_valid():
+        if not self.data_items:
             return None
         
         for item in self.data_items:
@@ -142,7 +141,7 @@ class DataManager(QObject):
 
     def delete_data_item_by_key(self, routeKey: str):
 
-        if not self.is_current_data_item_valid():
+        if not self.data_items:
             return
         
         item = self.get_data_item_by_key(routeKey)
@@ -154,8 +153,11 @@ class DataManager(QObject):
 
         self.current_item_index = -1
         self.current_point_index = -1
-        self.update_data_item.emit()
 
+        print("删除了多边形")
+
+        self.update_data_item.emit()
+        
     
     def delete_data_item_by_index(self, index: int):
         if index < 0 or index >= len(self.data_items):
@@ -167,10 +169,11 @@ class DataManager(QObject):
     def add_data_item(self, data_item: DataItemInfo):
 
         self.data_items.append(data_item)
+        signalBus.addItem.emit(data_item.id, data_item.caseLabel, data_item.annotation_type)
         self.current_item_index = len(self.data_items) - 1
         self.current_point_index = -1
-        signalBus.addItem.emit(data_item.id, data_item.caseLabel, data_item.annotation_type)
         self.update_data_item.emit()
+        print("添加了多边形")
 
     def delete_current_point(self):
 

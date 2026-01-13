@@ -12,7 +12,14 @@ from common.signal_bus import signalBus
 
 class CaseLabel(QObject):
 
-    label_show_changed = pyqtSignal(str)
+    label_color = pyqtSignal(str) # 标签颜色改变信号，参数为标签值
+
+    label_show_changed = pyqtSignal(str) # 标签显示状态改变信号，参数为标签值
+
+    add_label_changed = pyqtSignal(str) # 添加标签信号，参数为标签值
+
+    del_label_changed = pyqtSignal(str) # 删除标签信号，参数为标签值
+
 
     _INSTANCE = None 
     _INSTANCE_INIT = False 
@@ -31,18 +38,10 @@ class CaseLabel(QObject):
 
         self._label = {} # 标签字典，key为标签值,color为颜色,show为是否选中
 
-        self.set_label("default", themeColor())
 
-        self.set_label("char")
+        qconfig.themeColor.valueChanged.connect(lambda: self._set_color("default", themeColor()))
 
-        self.set_label("test")
-
-        self.set_label("string")
-
-
-        qconfig.themeColor.valueChanged.connect(lambda: self.set_label("default", themeColor()))
-        signalBus.caseLabelShow.connect(self._on_case_label_show)
-
+        signalBus.caseLabelShow.connect(self._set_show)
 
     def get_color(self, label_value: str) -> QColor:
 
@@ -50,18 +49,26 @@ class CaseLabel(QObject):
             return self._label[label_value]["color"]
         return themeColor()
     
-      
     def set_label(self, label_value: str, color: QColor= None, is_show: bool = True):
 
+        if label_value in self._label.keys():
+            return
+        
+        if label_value == "default":
+            self._label[label_value] = {"color": themeColor(), "show": is_show}
+            self.add_label_changed.emit(label_value)
+            return
+        
         if color is None:
             color = Utils.generate_random_color()
 
-        if label_value in self._label.keys():
-            self._label[label_value]["color"] = color
-    
-        else:
-            self._label[label_value] = {"color": color, "show": is_show}
+        self._label[label_value] = {"color": color, "show": is_show}
+        self.add_label_changed.emit(label_value)
 
+    def remove_label(self, label_value: str):
+        if label_value in self._label.keys():
+            del self._label[label_value]
+            self.del_label_changed.emit(label_value)
 
     def get_label_name(self, label_value: str):
         if label_value in self._label.keys():
@@ -79,11 +86,17 @@ class CaseLabel(QObject):
             return self._label[label_value]["show"]
         return True
     
-    def _on_case_label_show(self, caseLabel: str, show: bool):
+    def _set_show(self, caseLabel: str, show: bool):
         if caseLabel in self._label.keys():
 
             if self._label[caseLabel]["show"] != show:
                 self._label[caseLabel]["show"] = show
                 self.label_show_changed.emit(caseLabel)
         
+    def _set_color(self, label_value: str, color: QColor):
+        if label_value in self._label.keys():
+            if self._label[label_value]["color"] != color:
+                self._label[label_value]["color"] = color
+                self.label_color.emit(label_value)
+                
 cl = CaseLabel()

@@ -37,6 +37,9 @@ class LabelCardItem(QWidget):
         
         self._viewButton.clicked.connect(self._on_view_button_clicked)
 
+        cl.label_color.connect(self._update_color)
+
+
         self._init_ui()
 
 
@@ -48,6 +51,11 @@ class LabelCardItem(QWidget):
         hBoxLayout.setContentsMargins(20, 0, 10, 0)
         hBoxLayout.addWidget(self._viewButton,0, Qt.AlignRight | Qt.AlignVCenter)
 
+
+    def _update_color(self, label: str):
+        if label == self._name:
+            self._color = cl.get_color(label)
+            self.update()
 
     def _on_view_button_clicked(self):
         
@@ -74,8 +82,6 @@ class LabelCardItem(QWidget):
         painter.setRenderHint(QPainter.Antialiasing)
 
         b_color = QColor(self._color)
-
-        b_color.setAlpha(200) 
 
         painter.setBrush(QBrush(b_color))
         painter.setPen(QPen(self._color,1))
@@ -104,8 +110,11 @@ class LabelCardInterface(ScrollArea):
        
         self._init_ui()
 
-        for label_name in cl.get_all_labels():
-            self.insertItem(-1, label_name)
+        cl.add_label_changed.connect(self.addItem)
+        cl.del_label_changed.connect(self.removeItem)
+
+        # for label_name in cl.get_all_labels():
+        #     self.insertItem(-1, label_name)
 
     def _init_ui(self):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # 禁用水平滚动条

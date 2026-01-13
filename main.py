@@ -7,6 +7,9 @@ from enum import Enum
 from QtUniversalToolFrameWork.common.config import qconfig
 from view.main_window import mWindow
 
+
+qconfig.load(qconfig.filePath())
+
 if qconfig.get(qconfig.dpiScale) == "Auto":
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
