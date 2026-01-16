@@ -13,6 +13,7 @@ from QtUniversalToolFrameWork.common.cache import LRUCache
 from common.data_structure import jsonFileManager,DataInfo
 from components.info_card import InfoCardInterface
 from common.case_label import cl
+from common.message import message
 
 
 class LabelCardManager(QObject):
@@ -28,17 +29,19 @@ class LabelCardManager(QObject):
     def get(self, key):
   
         data_info = self._cache.get(key)
-        
         if data_info:
             return data_info
-        
         image_name = os.path.basename(key).split(".")[0]
         json_path = os.path.join(os.path.dirname(key), f"{image_name}.json")
 
         try:
             data_info = jsonFileManager.load_json(json_path)
+            
             self._on_widget_preloaded(key,data_info)
-        except:
+
+        except Exception as e:
+            message.show_error_message("异常", f"加载 {image_name} 失败！")
+
             data_info = None
         
         return data_info

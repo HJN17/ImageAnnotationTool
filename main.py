@@ -7,8 +7,12 @@ from enum import Enum
 from QtUniversalToolFrameWork.common.config import qconfig
 from view.main_window import mWindow
 
+import os
+
 
 qconfig.load(qconfig.filePath())
+
+os.environ["QT_LOGGING_RULES"] = "qt.gui.icc=false"
 
 if qconfig.get(qconfig.dpiScale) == "Auto":
     QApplication.setHighDpiScaleFactorRoundingPolicy(

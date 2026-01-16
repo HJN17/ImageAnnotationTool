@@ -6,14 +6,13 @@ from QtUniversalToolFrameWork.common.config import qconfig
 from QtUniversalToolFrameWork.view.setting_interface import SettingInterface, SettingCardGroup
 
 
-from components.label_list_setting_card import LabelListSettingCard
+from components.label_setting import LabelListSettingCard
 from common.case_label import cl    
 
 
 class SetInterface(SettingInterface):
         """ 设置界面 """
         
-
         def post_init(self):
             self.labelGroup = SettingCardGroup("标签", self.scrollWidget)
             

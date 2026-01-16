@@ -6,9 +6,6 @@ from QtUniversalToolFrameWork.common.config import qconfig,ConfigItem,ConfigVali
 
 
 
-
-
-
 class LabelListValidator(ConfigValidator):
     """ 标签列表验证器：验证列表中的所有路径是否存在，并过滤无效路径 """
 

@@ -8,13 +8,15 @@ from QtUniversalToolFrameWork.common.style_sheet import themeColor
 from QtUniversalToolFrameWork.common.config import qconfig
 
 from common.utils import Utils
-from common.signal_bus import signalBus
 
 class CaseLabel(QObject):
 
-    label_color = pyqtSignal(str) # 标签颜色改变信号，参数为标签值
 
-    label_show_changed = pyqtSignal(str) # 标签显示状态改变信号，参数为标签值
+    update_label_changed = pyqtSignal() # 更新标签信号，参数为标签值
+
+    color_label_changed = pyqtSignal(str) # 标签颜色改变信号，参数为标签值
+
+    show_label_changed = pyqtSignal(str) # 标签显示状态改变信号，参数为标签值,是否选中
 
     add_label_changed = pyqtSignal(str) # 添加标签信号，参数为标签值
 
@@ -41,7 +43,6 @@ class CaseLabel(QObject):
 
         qconfig.themeColor.valueChanged.connect(lambda: self._set_color("default", themeColor()))
 
-        signalBus.caseLabelShow.connect(self._set_show)
 
     def get_color(self, label_value: str) -> QColor:
 
@@ -86,17 +87,18 @@ class CaseLabel(QObject):
             return self._label[label_value]["show"]
         return True
     
-    def _set_show(self, caseLabel: str, show: bool):
+    def set_show(self, caseLabel: str, show: bool):
         if caseLabel in self._label.keys():
 
             if self._label[caseLabel]["show"] != show:
                 self._label[caseLabel]["show"] = show
-                self.label_show_changed.emit(caseLabel)
+                self.show_label_changed.emit(caseLabel)
+                self.update_label_changed.emit()
         
     def _set_color(self, label_value: str, color: QColor):
         if label_value in self._label.keys():
             if self._label[label_value]["color"] != color:
                 self._label[label_value]["color"] = color
-                self.label_color.emit(label_value)
+                self.color_label_changed.emit(label_value)
                 
 cl = CaseLabel()

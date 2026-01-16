@@ -4,8 +4,6 @@
     "issues": [],
     "items": [
         {
-            "id": "0",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -28,8 +26,6 @@
             ]
         },
         {
-            "id": "1",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -52,8 +48,6 @@
             ]
         },
         {
-            "id": "2",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -76,8 +70,6 @@
             ]
         },
         {
-            "id": "3",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -100,8 +92,6 @@
             ]
         },
         {
-            "id": "4",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -124,8 +114,6 @@
             ]
         },
         {
-            "id": "5",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "test",
             "points": [
@@ -160,8 +148,6 @@
             ]
         },
         {
-            "id": "6",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -184,8 +170,6 @@
             ]
         },
         {
-            "id": "7",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -208,8 +192,6 @@
             ]
         },
         {
-            "id": "8",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -232,8 +214,6 @@
             ]
         },
         {
-            "id": "9",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -256,8 +236,6 @@
             ]
         },
         {
-            "id": "10",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -280,8 +258,6 @@
             ]
         },
         {
-            "id": "11",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -304,8 +280,6 @@
             ]
         },
         {
-            "id": "12",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "string",
             "points": [
@@ -348,8 +322,6 @@
             ]
         },
         {
-            "id": "13",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -372,8 +344,6 @@
             ]
         },
         {
-            "id": "14",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -396,8 +366,6 @@
             ]
         },
         {
-            "id": "15",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -420,8 +388,6 @@
             ]
         },
         {
-            "id": "16",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -444,8 +410,6 @@
             ]
         },
         {
-            "id": "17",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -468,8 +432,6 @@
             ]
         },
         {
-            "id": "18",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "string",
             "points": [
@@ -504,8 +466,6 @@
             ]
         },
         {
-            "id": "19",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -528,8 +488,6 @@
             ]
         },
         {
-            "id": "20",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -552,8 +510,6 @@
             ]
         },
         {
-            "id": "21",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -576,8 +532,6 @@
             ]
         },
         {
-            "id": "22",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -600,8 +554,6 @@
             ]
         },
         {
-            "id": "23",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -624,8 +576,6 @@
             ]
         },
         {
-            "id": "24",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "string",
             "points": [
@@ -660,8 +610,6 @@
             ]
         },
         {
-            "id": "25",
-            "language": "",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -684,8 +632,6 @@
             ]
         },
         {
-            "id": "26",
-            "language": "",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -708,8 +654,6 @@
             ]
         },
         {
-            "id": "27",
-            "language": "",
             "annotation_type": "default",
             "caseLabel": "string",
             "points": [
@@ -740,8 +684,6 @@
             ]
         },
         {
-            "id": "28",
-            "language": "",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -764,8 +706,6 @@
             ]
         },
         {
-            "id": "29",
-            "language": "",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -788,8 +728,6 @@
             ]
         },
         {
-            "id": "30",
-            "language": "",
             "annotation_type": "default",
             "caseLabel": "string",
             "points": [
@@ -820,8 +758,6 @@
             ]
         },
         {
-            "id": "31",
-            "language": "",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -844,8 +780,6 @@
             ]
         },
         {
-            "id": "32",
-            "language": "",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -868,8 +802,6 @@
             ]
         },
         {
-            "id": "33",
-            "language": "",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -892,8 +824,6 @@
             ]
         },
         {
-            "id": "34",
-            "language": "",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -916,8 +846,6 @@
             ]
         },
         {
-            "id": "35",
-            "language": "",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -940,8 +868,6 @@
             ]
         },
         {
-            "id": "36",
-            "language": "",
             "annotation_type": "default",
             "caseLabel": "string",
             "points": [
@@ -980,8 +906,6 @@
             ]
         },
         {
-            "id": "37",
-            "language": "",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -1004,8 +928,6 @@
             ]
         },
         {
-            "id": "38",
-            "language": "",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -1028,8 +950,6 @@
             ]
         },
         {
-            "id": "39",
-            "language": "",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -1052,8 +972,6 @@
             ]
         },
         {
-            "id": "40",
-            "language": "",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -1076,8 +994,6 @@
             ]
         },
         {
-            "id": "41",
-            "language": "",
             "annotation_type": "default",
             "caseLabel": "string",
             "points": [
@@ -1112,8 +1028,6 @@
             ]
         },
         {
-            "id": "42",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -1136,8 +1050,6 @@
             ]
         },
         {
-            "id": "43",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -1160,8 +1072,6 @@
             ]
         },
         {
-            "id": "44",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -1184,8 +1094,6 @@
             ]
         },
         {
-            "id": "45",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -1208,8 +1116,6 @@
             ]
         },
         {
-            "id": "46",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -1232,8 +1138,6 @@
             ]
         },
         {
-            "id": "47",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -1256,8 +1160,6 @@
             ]
         },
         {
-            "id": "48",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -1280,8 +1182,6 @@
             ]
         },
         {
-            "id": "49",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -1304,8 +1204,6 @@
             ]
         },
         {
-            "id": "50",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -1328,8 +1226,6 @@
             ]
         },
         {
-            "id": "51",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -1352,8 +1248,6 @@
             ]
         },
         {
-            "id": "52",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -1376,8 +1270,6 @@
             ]
         },
         {
-            "id": "53",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -1400,8 +1292,6 @@
             ]
         },
         {
-            "id": "54",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -1424,8 +1314,6 @@
             ]
         },
         {
-            "id": "55",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "character",
             "points": [
@@ -1448,8 +1336,6 @@
             ]
         },
         {
-            "id": "56",
-            "language": "zh",
             "annotation_type": "default",
             "caseLabel": "string",
             "points": [

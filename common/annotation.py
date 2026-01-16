@@ -16,7 +16,7 @@ class AnnotationType(Enum):
 
 class AnnotationFrameBase(ABC):
 
-    annotation_type={}
+    annotation_items={}
     
     def __init__(self):
         self._points = []
@@ -25,62 +25,77 @@ class AnnotationFrameBase(ABC):
     @property
     def points(self) -> list[QPointF]:
         return self._points
+
     
-    @property
     def all_points(self) -> list[QPointF]:
         return self._points + [self._temp_point] if self._temp_point else self._points
     
     def set_temp_point(self, point: QPointF):
         self._temp_point = point
     
-    def add_point(self, point: QPointF):
+    def set_point(self, point: QPointF):
         self._points.append(point)
 
-    @abstractmethod
-    def draw(self, painter: QPainter, scale: float, offset: QPointF,color: QColor,func: callable = None,selected: bool = False,item_points: list[QPointF] = None) -> list[QPointF]:
+    @abstractmethod # 绘制标注框
+    def draw(self, painter: QPainter, scale: float, offset: QPointF,color: QColor,
+             func: callable = None,selected: bool = False,item_points: list[QPointF] = None) -> list[QPointF]:
         pass    
         
-    def check_click(self, points: list[QPointF], clamped_point: QPointF) -> bool:
+    # 检查点击是否在标注框内
+    def check_click(self, points: list[QPointF], clamped_point: QPointF,scale: float) -> bool:
         return False
 
-    def verify_points(self, points: list[QPointF]=None) -> bool:
+    def check_edge_click(self, points: list[QPointF], clamped_point: QPointF,scale: float) -> int:
+        return -1
+
+    # 验证标注框的点是否有效
+    def verify_points(self, length: int) -> bool:
         return True
     
     # 拖动顶点
     def drag_vertex(self, item , vertex_idx: int, clamped_point: QPointF):
-
         item.points[vertex_idx] = clamped_point
     
     # 拖动框
     def drag_frame(self, item, clamped_point: QPointF):
         pass
-
+    
 
     @classmethod
     def register(cls, annotation_type: AnnotationType):
         def wrapper(annotation_cls):
-            if annotation_type not in cls.annotation_type:
-                cls.annotation_type[annotation_type] = annotation_cls
+            if annotation_type not in cls.annotation_items:
+                cls.annotation_items[annotation_type] = annotation_cls
             return annotation_cls
         return wrapper
     
 
     @classmethod
-    def create(cls, annotation_type: AnnotationType, parent=None, **kwargs):
-        if annotation_type not in cls.annotation_type:
+    def create(cls, annotation_type: AnnotationType, **kwargs):
+        if annotation_type not in cls.annotation_items:
             raise ValueError(f"标注类型 `{annotation_type}` 未注册")
-        return cls.annotation_type[annotation_type](**kwargs)
+        return cls.annotation_items[annotation_type](annotation_type=annotation_type,**kwargs)
 
 
+    def is_registered(cls, annotation_type: AnnotationType) -> bool:
+        if not annotation_type:
+            return False
+        return annotation_type in cls.annotation_items
+    
+    
 
 @AnnotationFrameBase.register(AnnotationType.POLYGON)
 @AnnotationFrameBase.register(AnnotationType.DEFAULT)
 class PolygonAnnotation(AnnotationFrameBase):
 
+    def __init__(self,annotation_type: AnnotationType = AnnotationType.DEFAULT,**kwargs):
+        super().__init__(**kwargs)
+        self.annotation_type = annotation_type
+    
     def draw(self, painter: QPainter, scale: float, offset: QPointF, color: QColor, func: callable = None,selected: bool = False,item_points: list[QPointF] = None):
             
             if not item_points:
-                points = self.all_points
+                points = self.all_points()
             else:
                 points = item_points
 
@@ -100,7 +115,7 @@ class PolygonAnnotation(AnnotationFrameBase):
 
             painter.setPen(QPen(color, 2))
 
-            if self.verify_points(new_points):
+            if self.verify_points(len(new_points)):
                 painter.setBrush(QBrush(transparent_color, Qt.SolidPattern))
                 painter.drawPolygon(QPolygonF(new_points)) # 绘制多边形
             
@@ -108,15 +123,14 @@ class PolygonAnnotation(AnnotationFrameBase):
             for point in new_points:
                 painter.drawEllipse(point, 2, 2)
     
-        
-    def verify_points(self, points: list[QPointF]=None) -> bool:
-        if not points:
-            points = self.points
-        return len(points) >= 3
     
-    def check_click(self, points: list[QPointF], clamped_point: QPointF) -> bool:
+    def verify_points(self, length: int) -> bool:
+      
+        return length >= 3
+    
+    def check_click(self, points: list[QPointF], clamped_point: QPointF,scale: float) -> bool:
         
-        if not self.verify_points(points):
+        if not self.verify_points(len(points)):
             return False
 
         polyf = QPolygonF(points)
@@ -124,17 +138,42 @@ class PolygonAnnotation(AnnotationFrameBase):
             return True
         return False
     
+
+    def check_edge_click(self, points: list[QPointF], clamped_point: QPointF,scale: float) -> int:
+        
+        if not self.verify_points(len(points)):
+            return -1
+        
+        threshold = max(4,4/scale)
+        min_dist = float("inf") 
+
+
+        for j in range(len(points)):
+            p1 = points[j]
+            p2 = points[(j + 1) % len(points)]
+            dist = Utils.point_to_line_distance(clamped_point, p1, p2) # 计算点到线的距离
+            if dist < threshold and dist < min_dist:
+                min_dist = dist
+                best_edge_idx = j + 1  # 插入到边的后面
+                
+        if min_dist < threshold:
+            return best_edge_idx
+        
+        return -1
+    
               
 @AnnotationFrameBase.register(AnnotationType.LINE)
 class LineAnnotation(AnnotationFrameBase):
 
 
-
+    def __init__(self,annotation_type: AnnotationType = AnnotationType.DEFAULT,**kwargs):
+        super().__init__(**kwargs)
+        self.annotation_type = annotation_type
 
     def draw(self, painter: QPainter, scale: float, offset: QPointF, color: QColor,func: callable = None,selected: bool = False,item_points: list[QPointF] = None):
         
         if not item_points:
-            points = self.all_points
+            points = self.all_points()
         else:
             points = item_points
 
@@ -156,26 +195,27 @@ class LineAnnotation(AnnotationFrameBase):
         painter.setPen(QPen(transparent_color, 2))
 
 
-        if self.verify_points(new_points):
-            for i in range(1, len(new_points)):
+        length = len(new_points)
+
+        if self.verify_points(length):
+            for i in range(1, length):
                 painter.drawLine(new_points[i-1], new_points[i]) 
         
         painter.setBrush(QBrush(color, Qt.SolidPattern))
         for point in new_points:
             painter.drawEllipse(point, 2, 2) 
         
-    def verify_points(self, points: list[QPointF]=None) -> bool:
-        if not points:
-            points = self.points
-        return len(points) >= 2
-
-    def check_click(self, points: list[QPointF], clamped_point: QPointF) -> bool:
+    def verify_points(self, length:int) -> bool:
         
-        if not self.verify_points(points):
+        return length >= 2
+
+    def check_click(self, points: list[QPointF], clamped_point: QPointF,scale: float) -> bool:
+        
+        if not self.verify_points(len(points)):
             return False
 
-        threshold = 8
-        min_dist = 8
+        threshold = max(6,6/scale)
+        min_dist = float("inf") 
 
 
         for j in range(len(points)):
@@ -189,18 +229,44 @@ class LineAnnotation(AnnotationFrameBase):
             return True
         
         return False
+    
+    def check_edge_click(self, points: list[QPointF], clamped_point: QPointF,scale: float) -> int:
+        
+        if not self.verify_points(len(points)):
+            return -1
+        
+        threshold = max(6,6/scale)
+        min_dist = float("inf") 
+
+        for j in range(len(points)-1):
+            p1 = points[j]
+            p2 = points[j + 1]
+            dist = Utils.point_to_line_distance(clamped_point, p1, p2) # 计算点到线的距离
+            if dist < threshold and dist < min_dist:
+                min_dist = dist
+                best_edge_idx = j + 1  # 插入到边的后面
+                
+        if min_dist < threshold:
+            return best_edge_idx
+        
+        return -1
+
+
 
 @AnnotationFrameBase.register(AnnotationType.BBOX)
 class BboxAnnotation(AnnotationFrameBase):
     
-    def __init__(self):
-        super().__init__()
+
+    def __init__(self,annotation_type: AnnotationType = AnnotationType.DEFAULT,**kwargs):
+        super().__init__(**kwargs)
+        self.annotation_type = annotation_type
         self._start_point = None
+        
 
     def draw(self, painter: QPainter, scale: float, offset: QPointF, color: QColor,func: callable = None,selected: bool = False,item_points: list[QPointF] = None):
 
         if not item_points:
-            points = self.all_points
+            points = self.all_points()
         else:
             points = item_points
 
@@ -219,7 +285,7 @@ class BboxAnnotation(AnnotationFrameBase):
         
         painter.setPen(QPen(color, 2))
         
-        if self.verify_points(new_points):
+        if self.verify_points(len(new_points)/2):
             painter.setBrush(QBrush(transparent_color, Qt.SolidPattern))
             painter.drawPolygon(QPolygonF(new_points)) 
         
@@ -227,15 +293,17 @@ class BboxAnnotation(AnnotationFrameBase):
         for point in new_points:
             painter.drawEllipse(point, 2, 2)
 
-    def verify_points(self, points: list[QPointF]=None) -> bool:
-        if not points:
-            points = self.points
-        return len(points) == 4
 
 
-    def check_click(self, points: list[QPointF], clamped_point: QPointF) -> bool:
+    def verify_points(self, length:int) -> bool:
         
-        if not self.verify_points(points):
+        return length == 2 
+
+    
+
+    def check_click(self, points: list[QPointF], clamped_point: QPointF,scale: float) -> bool:
+        
+        if not self.verify_points(len(points)/2):
             return False
 
         polyf = QPolygonF(points)
@@ -243,6 +311,7 @@ class BboxAnnotation(AnnotationFrameBase):
             return True
         
         return False
+
 
     def drag_vertex(self, item , vertex_idx: int, clamped_point: QPointF):
         
@@ -262,7 +331,7 @@ class BboxAnnotation(AnnotationFrameBase):
         
         item.points = Utils.get_rectangle_points(new_points)
 
-    def add_point(self, point: QPointF):
+    def set_point(self, point: QPointF):
        self._start_point = point
 
     def set_temp_point(self, point):
@@ -279,11 +348,16 @@ class BboxAnnotation(AnnotationFrameBase):
 @AnnotationFrameBase.register(AnnotationType.POINT)
 class PointAnnotation(AnnotationFrameBase):
 
+    def __init__(self,annotation_type: AnnotationType = AnnotationType.DEFAULT,**kwargs):
+        super().__init__(**kwargs)
+        self.annotation_type = annotation_type
+            
+
     def draw(self, painter: QPainter, scale: float, offset: QPointF, color: QColor,func: callable = None,selected: bool = False,item_points: list[QPointF] = None):
         
 
         if not item_points:
-                points = self.all_points
+                points = self.all_points()
         else:
             points = item_points
 
@@ -301,4 +375,3 @@ class PointAnnotation(AnnotationFrameBase):
         for point in new_points:
             painter.drawEllipse(point, 2, 2) 
     
-   

@@ -37,7 +37,7 @@ class LabelCardItem(QWidget):
         
         self._viewButton.clicked.connect(self._on_view_button_clicked)
 
-        cl.label_color.connect(self._update_color)
+        cl.color_label_changed.connect(self._update_color)
 
 
         self._init_ui()
@@ -65,12 +65,12 @@ class LabelCardItem(QWidget):
         if not self._view_button_bool:
             self._view_button_bool = True
             self._viewButton.setIcon(f":/resource/images/icons/View_black.svg")
-            signalBus.caseLabelShow.emit(self._name,True)
+            cl.set_show(self._name,True)
             return
         
         self._view_button_bool = False
         self._viewButton.setIcon(f":/resource/images/icons/Hide_black.svg")
-        signalBus.caseLabelShow.emit(self._name,False)
+        cl.set_show(self._name,False)
     
 
     def paintEvent(self, event):

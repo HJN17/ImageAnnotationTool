@@ -21,6 +21,8 @@ from QtUniversalToolFrameWork.components.widgets.line_edit import LineEdit
 
 from common.case_label import cl
 
+
+
 class AddLabelMessageBox(CustomMessageBoxBase):
     """ 标签列表设置消息框 """
     
@@ -91,7 +93,7 @@ class LabelItem(QWidget):
         if label_name == "default":
             self._closeButton.hide()
 
-        cl.label_color.connect(self._update_color)
+        cl.color_label_changed.connect(self._update_color)
 
         self._init_ui()
 
@@ -120,8 +122,6 @@ class LabelItem(QWidget):
         if label == self._label_name:
             self._color = cl.get_color(label)
             self._colorButton.setColor(self._color)
-
-    
 
 
 class LabelListSettingCard(ExpandSettingCard):

@@ -1,19 +1,14 @@
 # coding:utf-8
-import sys
-import traceback
-from PyQt5.QtCore import Qt,pyqtSignal,QRectF,QEvent
-from PyQt5.QtWidgets import QFrame, QWidget, QHBoxLayout, QVBoxLayout, QGraphicsDropShadowEffect
-from PyQt5.QtGui import QColor, QPainter, QBrush, QPen, QFont
 
-from QtUniversalToolFrameWork.common.font import getFont
+from PyQt5.QtCore import Qt,QRect,QRectF,QPoint
+from PyQt5.QtWidgets import QFrame, QWidget, QHBoxLayout, QVBoxLayout
+from PyQt5.QtGui import QColor, QPainter, QBrush, QPen
+
 from QtUniversalToolFrameWork.common.icon import FluentIcon
-from QtUniversalToolFrameWork.common.color import ThemeBackgroundColor
-from QtUniversalToolFrameWork.common.style_sheet import setShadowEffect
 from QtUniversalToolFrameWork.components.widgets import ScrollArea
-from QtUniversalToolFrameWork.components.layout import ExpandLayout
 from QtUniversalToolFrameWork.components.widgets.label import CardLabel
 from QtUniversalToolFrameWork.components.widgets.combo_box import ComboBox
-from QtUniversalToolFrameWork.components.widgets.button import TransparentToolButton,PushButton
+from QtUniversalToolFrameWork.components.widgets.button import TransparentToolButton
 
 from common.annotation import AnnotationType
 from common.style_sheet import StyleSheet
@@ -71,7 +66,7 @@ class InfoCardItem(QWidget):
 
         cl.add_label_changed.connect(self._add_comboBox_item)
         cl.del_label_changed.connect(self._del_comboBox_item)
-        cl.label_color.connect(self._update_color)
+        cl.color_label_changed.connect(self._update_color)
 
         self._comboBox.currentTextChanged.connect(lambda text: self._set_case_label(text))
         self._comboBox.currentTextChanged.connect(self.update)
@@ -79,7 +74,7 @@ class InfoCardItem(QWidget):
         self._comboBox.clicked.connect(lambda: signalBus.selectItem.emit(self._id))
         self._delButton.clicked.connect(lambda: signalBus.deleteItem.emit(self._id))
         
-        cl.label_show_changed.connect(self._update_show)
+        cl.show_label_changed.connect(self._update_show)
 
     
         self._update_show(self._case_label)
@@ -153,7 +148,7 @@ class InfoCardItem(QWidget):
 
         self._color = cl.get_color(case_label)
         self._update_show(self._case_label)
-        signalBus.itemCaseLabelChanged.emit(self._id, self._case_label)
+        signalBus.labelComboBoxChanged.emit(self._id, self._case_label)
     
 
     def is_show(self) -> bool:
@@ -293,7 +288,7 @@ class InfoCardInterface(ScrollArea):
         for k, item in self._items.items():
             item.setSelected(k == routeKey)
 
-        self.scrollToWidget(target_widget, scroll_align=Qt.AlignCenter)
+        self.scrollToWidget(target_widget)
 
 
     def currentItem(self):
@@ -311,36 +306,45 @@ class InfoCardInterface(ScrollArea):
         
         return self.items[routeKey]
     
+ 
     def scrollToWidget(self, widget: InfoCardItem, scroll_align=Qt.AlignTop):
         """
-        滚动到指定部件，并支持自定义对齐方式
+        滚动到指定部件，并支持自定义对齐方式（精准生效版）
         :param widget: 目标部件
         :param scroll_align: 对齐方式（Qt.AlignTop/Qt.AlignCenter/Qt.AlignBottom）
         """
+        # 边界判断：控件为空 或 不在当前列表中，直接返回
         if not widget or widget not in self.items.values():
             return
+
+        scroll_bar = self.verticalScrollBar() # 获取垂直滚动条
+        viewport = self.viewport() # 获取滚动区域视口
         
-        #如果当前可见，无需滚动
-        if widget.isVisible():
+
+        widget_viewport_pos = widget.mapTo(viewport, QPoint(0, 0)) # 获取控件在视口坐标系中的左上角点
+        widget_size = widget.size() # 获取控件的实际尺寸（宽高）
+
+        widget_viewport_rect = QRect(widget_viewport_pos, widget_size)
+
+        if viewport.rect().contains(widget_viewport_rect):
             return
 
-        
-        widget_rect = widget.geometry()
-        viewport_rect = self.viewport().rect()
-        scroll_bar = self.verticalScrollBar()
+        viewport_height = viewport.height()
+        widget_height = widget_size.height()
+        current_scroll_y = scroll_bar.value()
         
         if scroll_align == Qt.AlignCenter:
-            # 居中显示：计算滚动条目标值
-            target_y = widget_rect.top() - (viewport_rect.height() - widget_rect.height()) / 2
+            target_y = current_scroll_y + widget_viewport_pos.y() - (viewport_height - widget_height) / 2
         elif scroll_align == Qt.AlignBottom:
-            # 底部对齐
-            target_y = widget_rect.bottom() - viewport_rect.height()
+            target_y = current_scroll_y + widget_viewport_pos.y() - (viewport_height - widget_height)
         else:
-            # 顶部对齐（默认）
-            target_y = widget_rect.top()
+            target_y = current_scroll_y + widget_viewport_pos.y()
+
+        min_y = 0
+        max_y = scroll_bar.maximum()
+        target_y = max(min_y, min(int(target_y), max_y))
         
-        target_y = max(0, min(target_y, scroll_bar.maximum()))
-        scroll_bar.setValue(int(target_y))
+        scroll_bar.setValue(target_y)
         
     
  

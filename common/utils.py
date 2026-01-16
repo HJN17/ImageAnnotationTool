@@ -124,7 +124,7 @@ class Utils:
         return QPointF(x1 + t * dx, y1 + t * dy)
     
     @staticmethod
-    def get_closest_point_index_and_edge(points: List[QPointF],point: QPointF) -> QPointF:
+    def get_closest_point_index_and_edge(points: List[QPointF],point: QPointF) -> tuple[int,QPointF]:
         """ 查找点到指定图形边的最近距离点"""
        
         num_points = len(points)

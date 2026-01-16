@@ -7,15 +7,14 @@ class SignalBus(QObject):
     """ Signal bus """
 
     annotationTypeChanged = pyqtSignal(AnnotationType)
-
     splitPolygonFunction = pyqtSignal(bool)
-
-
-    itemCaseLabelChanged = pyqtSignal(str, str) # item中标签改变信号，参数为itemKey, caseLabel
     
-    deleteItem = pyqtSignal(str)
-    selectItem = pyqtSignal(str)
-    addItem = pyqtSignal(str, str, AnnotationType)
-    caseLabelShow = pyqtSignal(str, bool)
+
+    labelComboBoxChanged = pyqtSignal(str, str) # 标签下拉框改变信号，参数为itemKey, caseLabel
+    
+
+    deleteItem = pyqtSignal(str) # 删除DataItem信号
+    selectItem = pyqtSignal(str) # 选择DataItem信号
+    addItem = pyqtSignal(str, str, AnnotationType) # 添加DataItem信号
 
 signalBus = SignalBus()

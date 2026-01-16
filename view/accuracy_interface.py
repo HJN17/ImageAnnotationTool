@@ -2,11 +2,11 @@ import os
 from natsort import natsorted
 import shutil
 import copy 
-import uuid
-from PyQt5.QtCore import Qt, QSize, pyqtSlot,pyqtSignal
+
+from PyQt5.QtCore import Qt,pyqtSlot
 from PyQt5.QtGui import QColor,QPixmap
 from PyQt5.QtWidgets import (QWidget, QPushButton, QFrame, QHBoxLayout, QVBoxLayout, 
-                           QGroupBox, QFileDialog, QMessageBox,QTextBrowser,QDialog)
+                           QApplication, QFileDialog, QMessageBox,QTextBrowser,QDialog)
 
 from QtUniversalToolFrameWork.common.image_utils import ImageManager,get_image_paths
 from QtUniversalToolFrameWork.common.icon import Action,FluentIcon as FIF
@@ -14,9 +14,9 @@ from QtUniversalToolFrameWork.common.cursor import CursorStyle,cursor
 from QtUniversalToolFrameWork.components.widgets.image_canvas import ImageProgressWidget,ImageSearchFlyoutView
 from QtUniversalToolFrameWork.components.widgets.label import CommandBarLabel
 from QtUniversalToolFrameWork.components.widgets.command_bar import CommandBar
-from QtUniversalToolFrameWork.components.widgets.info_bar import InfoBar,InfoBarPosition
 from QtUniversalToolFrameWork.components.widgets.flyout import Flyout,FlyoutAnimationType
 from QtUniversalToolFrameWork.components.widgets.gallery_interface import TitleToolBar
+from QtUniversalToolFrameWork.components.widgets.info_bar import InfoBar,InfoBarPosition
 
 from common.signal_bus import signalBus
 from common.style_sheet import StyleSheet
@@ -28,15 +28,9 @@ from common.annotation import AnnotationType,AnnotationFrameBase
 from common.key_manager import keyManager
 from common.data_control_manager import dm
 from common.case_label import cl
+from common.message import message
 from common.icon import icon
 from components.pivot_stacked import PivotStacked
-
-
-
-
-
-
-
 
 
 
@@ -61,17 +55,17 @@ class AccuracyInterface(QWidget):
 
         self._current_dir = ""
 
+
+
         self._progress_widget.progress.connect(self._on_progress_changed)
 
         self._image_manager.image_loaded.connect(self._display_current_image)
-
         self._image_manager.image_loaded.connect(self._set_progress_value)
-
         self._image_manager.skip_previous_item.connect(self._save_annotations)
-
         self._image_manager.item_deleted.connect(self._set_progress_range)
         self._image_manager.item_inserted.connect(self._set_progress_range)
         self._image_manager.model_reset.connect(self._set_progress_range)
+
 
         self._label_card_manager.data_info_signal.connect(self._pivot_stacked.create_info_card_interface)
 
@@ -82,10 +76,7 @@ class AccuracyInterface(QWidget):
         keyManager.SHIFT.connect(self._on_shift_pressed)
 
         signalBus.annotationTypeChanged.connect(self._annotation_type_changed)
-
         signalBus.splitPolygonFunction.connect(self._on_m_pressed)
-
-        dm.split_vertex_created.connect(self._finish_split_data_item)
 
         self.init_ui()
 
@@ -188,7 +179,7 @@ class AccuracyInterface(QWidget):
                 Action(FIF.ROTATE,triggered=self._image_canvas.rotate_image,shortcut="R"),
                 Action(FIF.ZOOM_IN,triggered=self._image_canvas.zoom_in),
                 Action(FIF.ZOOM_OUT,triggered=self._image_canvas.zoom_out),
-                Action(FIF.DELETE,triggered=self._on_delete_image_and_annotations_clicked,shortcut="Delete"),
+                Action(FIF.DELETE,triggered=self._on_delete_image_clicked,shortcut="Delete"),
             ])
 
             return bar1,bar2
@@ -217,13 +208,15 @@ class AccuracyInterface(QWidget):
 
         self._load_annotations()
 
-
-        
     def _on_show_annotations_toggled(self):
+
+
         if not self._image_manager or self._image_manager.is_empty():
             return
 
         dm.init_vars()
+
+        
 
         if self._show_annotations_action.isChecked(): # 显示标注
             dm.init_data_items()
@@ -234,11 +227,10 @@ class AccuracyInterface(QWidget):
         
     def _load_annotations(self):
         """加载标注数据"""
-
         dm.data_info = self._label_card_manager.get(self._image_manager.current_item)
 
         if dm.data_info is None:
-            print(f"未找到标注文件 {self._image_manager.current_item}")
+            message.show_error_message("错误", "未找到标注文件!")
             return
 
         self._on_show_annotations_toggled()
@@ -258,7 +250,7 @@ class AccuracyInterface(QWidget):
         try:
             jsonFileManager.save_json(json_path, dm.data_info)
         except Exception as e:
-            print(f"保存标注失败: {str(e)}")
+            message.show_error_message("错误","标签文件保存失败！")
             return
 
     @pyqtSlot(str)
@@ -267,12 +259,12 @@ class AccuracyInterface(QWidget):
             try:
                 image_index = self._image_manager.items.index(os.path.join(self._current_dir, search_text))    
             except ValueError:
-                print(f"未找到图像 {search_text}")
+                message.show_error_message("错误", f"未找到图像 {search_text}")
                 return
                 
             self._image_manager.go_to(image_index)
 
-    def _on_delete_image_and_annotations_clicked(self):
+    def _on_delete_image_clicked(self):
         if not self._image_manager.items or self._image_manager.current_index == -1:
             return
         
@@ -294,102 +286,49 @@ class AccuracyInterface(QWidget):
 
             self._image_manager.delete_current()
 
-            print(f"删除成功")
+            message.show_success_message("提示",f"图像 {image_name} 删除成功！")
         except Exception as e:
-            print(f"删除失败, 原因: {str(e)}")
+            message.show_error_message("错误",f"图像删除失败！")
             return
 
-    def _finish_create_data_item(self):
-
-        points = self._image_canvas.finish_create_frame_coords()
-
-        if not points:
-            return
-        
-        points = Utils.get_rectangle_vertices(points)
-       
-        if not points:
-            return
-
-
-        new_data_item = DataItemInfo(
-            id=str(uuid.uuid4()),
-            language="",
-            annotation_type=self._annotation_type,
-            caseLabel="default",
-            points=points
-        )
-        
-        dm.add_data_item(new_data_item)
-
-    def _finish_split_data_item(self):
-        
-        item_data_1,item_data_2 = self._image_canvas.finish_split_frame_coords()
-
-        if item_data_1:
-
-            new_data_item_1 = DataItemInfo(
-                id=str(uuid.uuid4()),
-                language="",
-                annotation_type=AnnotationType.DEFAULT,
-                caseLabel="default",
-                points=item_data_1
-            )
-
-            dm.add_data_item(new_data_item_1)
-            
-        if item_data_2:
     
-            new_data_item_2 = DataItemInfo(
-                id=str(uuid.uuid4()),
-                language="",
-                annotation_type=AnnotationType.DEFAULT,
-                caseLabel="default",
-                points=item_data_2
-            )
-            dm.add_data_item(new_data_item_2)
-    
-    def _clear_all_data_items(self):
-        if not dm.is_current_data_item_valid():
+    def _clear_all_items(self):
+        if not dm.is_current_item_valid():
             return
         
         dm.data_info = DataInfo(file_name=dm.data_info.file_name, items=[])
         dm.init_vars()
         
-    
-    
     def _on_shift_pressed(self, pressed):
 
         dm.shift_pressed = pressed
 
         if pressed:
-            print("Shift键已按下，点击Charset边缘添加顶点") 
             self._image_canvas.setCursor(Qt.PointingHandCursor)
         else:
-            print("Shift键已释放")
             self._image_canvas.setCursor(Qt.ArrowCursor)
 
     def _on_d_pressed(self, pressed):
+
         if pressed:
-            if dm.delete_current_point() == 2:
-                print("DataItem至少需要3个顶点")
+            dm.delete_current_point()
              
     def _on_n_pressed(self, pressed):
 
         if pressed:
             if dm.creating_data_item:
-                self._finish_create_data_item()
-                print("完成创建DataItem")
+
+                self._image_canvas.setMouseTracking(False)
+                self._image_canvas.setCursor(Qt.ArrowCursor)
+
+                dm.finish_create(self._image_canvas.get_origin_image_size())
             else:
-                print("开始创建DataItem:",self._annotation_type)
                 dm.creating_data_item = True
                 dm.annotion_frame = AnnotationFrameBase.create(self._annotation_type)
                 self._image_canvas.setMouseTracking(True)
                 self._image_canvas.setCursor(Qt.BlankCursor) # 隐藏鼠标光标
                 
-                
         elif dm.creating_data_item:
-            print("取消创建DataItem")
             dm.creating_data_item = False
             dm.annotion_frame = None
             self._image_canvas.setMouseTracking(False)
@@ -399,18 +338,15 @@ class AccuracyInterface(QWidget):
     def _on_m_pressed(self, pressed):
 
         if pressed:
-            print("开始创建SplitVertex")
             dm.creating_split_vertex = True
             dm.split_item_index = -1
             dm.annotion_frame = AnnotationFrameBase.create(AnnotationType.LINE)
 
-            print(f"创建SplitVertex: {dm.annotion_frame.__class__.__name__}")
 
             self._image_canvas.setMouseTracking(True)
             self._image_canvas.setCursor(Qt.PointingHandCursor)
 
         elif dm.creating_split_vertex:
-            print("取消创建SplitVertex")
             dm.creating_split_vertex = False
             dm.split_item_index = -1
             dm.annotion_frame = None
@@ -466,19 +402,6 @@ class AccuracyInterface(QWidget):
         width += self._commandBar2.width()
         self._commandBar2.updateGeometry()
 
-    def _show_info_message(self, title: str, content: str):
-        InfoBar.info(
-            title=title, content=content, orient=Qt.Horizontal,
-            isClosable=True, position=InfoBarPosition.TOP_RIGHT,
-            duration=2000, parent=self
-        )
-
-    def _show_error_message(self, title: str, content: str):
-        InfoBar.error(
-            title=title, content=content, orient=Qt.Horizontal,
-            isClosable=True, position=InfoBarPosition.TOP_RIGHT,
-            duration=3000, parent=self
-        )
 
     def show_shortcut_help(self):
         """显示快捷键说明弹窗"""

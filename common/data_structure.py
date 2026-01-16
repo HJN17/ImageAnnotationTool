@@ -1,22 +1,36 @@
 # coding:utf-8
-import sys
 import os
 import json
-import shutil
-from typing import List
-from PyQt5.QtCore import QPointF
-from common.annotation import AnnotationType
 import time
 import threading
 from collections import defaultdict 
 from copy import deepcopy
+from typing import List
+from PyQt5.QtCore import QPointF, QTimer
+from PyQt5.QtWidgets import QApplication
+
+
+
+
+
+
+
+from common.annotation import AnnotationType,AnnotationFrameBase
 from common.utils import Utils
+from common.case_label import cl
+from common.message import message
+
+
+
+
+
 class DataItemInfo:
-    def __init__(self,id : str,language : str = "", annotation_type : AnnotationType = AnnotationType.DEFAULT, caseLabel : str = "",points : list[QPointF] = [],):
+
+    def __init__(self,id : str, annotation_type : str = "default", caseLabel : str = "",points : list[QPointF] = [],):
 
         self._id = id
-        self._language = language
-        self._annotation_type = annotation_type
+        self._annotation_type = self.verify_annotation_type(annotation_type)
+        self._annotation = AnnotationFrameBase.create(self._annotation_type)
         self._caseLabel = caseLabel
         self._points = self.validate_points(points)
 
@@ -24,10 +38,6 @@ class DataItemInfo:
     def id(self) -> str:
         return self._id
 
-    @property
-    def language(self) -> str:
-        return self._language
-    
     @property
     def annotation_type(self) -> AnnotationType:
         return self._annotation_type
@@ -47,21 +57,20 @@ class DataItemInfo:
     @property
     def origin_points(self) -> list[QPointF]:
         return self._points
+    
+    @property
+    def annotation(self) -> AnnotationFrameBase:
+        return self._annotation
 
-    #验证points是否符合annotation_type
     def validate_points(self, points : list[QPointF]):
 
-        if not points:
-            raise ValueError("points不能为空")
-        if self._annotation_type == AnnotationType.BBOX:
-            if len(points) != 2:
-                raise ValueError("BBOX应为2个点")
-        if self._annotation_type == AnnotationType.POLYGON or self._annotation_type == AnnotationType.DEFAULT:
-            if len(points) < 3:
-                raise ValueError("多边形需要3个点以上")
-        if self._annotation_type == AnnotationType.LINE:
-            if len(points) < 2:
-                raise ValueError("线需要2个点以上")
+        length = len(points)
+
+        if not self._annotation.verify_points(length):
+
+            message.show_message_dialog("错误!", "点的数量不符合要求")
+
+            raise Exception("The number of points does not meet the requirements.")
         
         return points
 
@@ -69,10 +78,6 @@ class DataItemInfo:
     def id(self, value : str):
         self._id = value
     
-    @language.setter
-    def language(self, value : str):
-        self._language = value
-            
     @annotation_type.setter
     def annotation_type(self, value : AnnotationType):
         self._annotation_type = value
@@ -96,11 +101,18 @@ class DataItemInfo:
     def remove_point(self, index : int):
         self._points.pop(index)
 
-    
+    # 验证annotation_type是否合法
+    def verify_annotation_type(self, value : str):
+        try:
+            return AnnotationType(value)
+        
+        except ValueError:
+            
+            return AnnotationType.DEFAULT
+
+
     def to_dict(self):
         return {
-            "id": self._id,
-            "language": self._language,
             "annotation_type": self._annotation_type.value,
             "caseLabel": self._caseLabel,
             "points": [[p.x(),p.y()] for p in self._points]
@@ -112,7 +124,6 @@ class  DataInfo:
         self._label = label
         self._issues = issues
         self._items = items
-
 
     @property
     def file_name(self) -> str:
@@ -234,13 +245,13 @@ class JsonFileManager:
                 time.sleep(self.RETRY_INTERVAL)
         return {} 
 
-
     def _get_data_size(self, data_info : DataInfo):
 
         return len(json.dumps(data_info.to_dict()))
 
     def _cache_cleanup(self):
         with self._cache_lock:
+
             now = time.time()
             
             expired_paths = [
@@ -273,8 +284,7 @@ class JsonFileManager:
         while True:
             time.sleep(60) 
             self._cache_cleanup()
-
-
+            
     def save_json(self, json_path : str, data_info : DataInfo): 
 
         with self._cache_lock:
@@ -308,9 +318,12 @@ class JsonFileManager:
 
                 return deepcopy(data_info) 
         
+
         data = self._safe_load_json(json_path) # 安全加载JSON
 
+        
         data_info = self._load_data_info(data)
+
 
         with self._cache_lock:
             self._json_cache[json_path] = (deepcopy(data_info), time.time(), time.time())
@@ -330,24 +343,22 @@ class JsonFileManager:
             self._json_cache.clear()
 
     def _load_data_info(self, data) -> DataInfo:
-        
+
         items: List[DataItemInfo] = []
+
         id = 0
+
         for item_dict in data.get("items", []):
-            points = [QPointF(float(p[0]), float(p[1])) for p in item_dict.get("points", [])]
-            anno_type_value = item_dict.get("annotation_type", AnnotationType.DEFAULT)
-            try:
-                annotation_type = AnnotationType(anno_type_value)
-            except ValueError:
-                annotation_type = AnnotationType.DEFAULT
             
+            points = [QPointF(float(p[0]), float(p[1])) for p in item_dict.get("points", [])]
+
             data_item = DataItemInfo(
                 id=str(id),
-                language=item_dict.get("language", ""),
-                annotation_type=annotation_type,
+                annotation_type=item_dict.get("annotation_type", "default"),
                 caseLabel=item_dict.get("caseLabel", "default"),
                 points=points
             )
+
             items.append(data_item)
             
             id += 1
@@ -360,32 +371,6 @@ class JsonFileManager:
             ) 
         
         return data_info
-
-
-    def _goolge_load_data_info(self, data: dict) -> DataInfo:
-        """加载标注数据"""
-        items  = []
-
-        for item in data.get('DataList',[]):
-
-            for charset_dict in item.get('charsets', []):
-
-                poly = charset_dict.get('poly', [])
-
-                if not poly:
-                    continue
-                
-                points = [QPointF(p[0], p[1]) for p in poly[0]]
-                text = charset_dict.get("text", "")
-                language = item.get('language', '')
-                items.append(DataItemInfo(text, language, points, AnnotationType.DEFAULT,"character"))
-            
-            file_name = data.get("FilePath", "")
-            text = item.get("text", "")
-            points = [QPointF(p[0], p[1]) for p in item.get('poly', [])]
-            language = item.get('language', '')
-            items.append(DataItemInfo(text, language, points, AnnotationType.DEFAULT,"string"))
-            return DataInfo(file_name=file_name,items=items)
 
 jsonFileManager = JsonFileManager()
 
