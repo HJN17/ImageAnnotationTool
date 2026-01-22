@@ -1,13 +1,14 @@
 import os
 from natsort import natsorted
 import shutil
-import copy 
-
-from PyQt5.QtCore import Qt,pyqtSlot
+import threading
+import time
+from PyQt5.QtCore import Qt,pyqtSlot,QPoint,QThread,pyqtSignal
 from PyQt5.QtGui import QColor,QPixmap
 from PyQt5.QtWidgets import (QWidget, QPushButton, QFrame, QHBoxLayout, QVBoxLayout, 
                            QApplication, QFileDialog, QMessageBox,QTextBrowser,QDialog)
 
+from QtUniversalToolFrameWork.common.cache import LRUCache
 from QtUniversalToolFrameWork.common.image_utils import ImageManager,get_image_paths
 from QtUniversalToolFrameWork.common.icon import Action,FluentIcon as FIF
 from QtUniversalToolFrameWork.common.cursor import CursorStyle,cursor
@@ -17,13 +18,13 @@ from QtUniversalToolFrameWork.components.widgets.command_bar import CommandBar
 from QtUniversalToolFrameWork.components.widgets.flyout import Flyout,FlyoutAnimationType
 from QtUniversalToolFrameWork.components.widgets.gallery_interface import TitleToolBar
 from QtUniversalToolFrameWork.components.widgets.info_bar import InfoBar,InfoBarPosition
+from QtUniversalToolFrameWork.components.widgets.state_tool_tip import StateToolTip
 
 from common.signal_bus import signalBus
 from common.style_sheet import StyleSheet
 from common.utils import Utils
 from components.image_canvas import PolygonsDrawImageCanvas
 from common.data_structure import DataInfo,DataItemInfo,jsonFileManager
-from common.cache_label_card import LabelCardManager
 from common.annotation import AnnotationType,AnnotationFrameBase
 from common.key_manager import keyManager
 from common.data_control_manager import dm
@@ -31,11 +32,124 @@ from common.case_label import cl
 from common.message import message
 from common.icon import icon
 from components.pivot_stacked import PivotStacked
+from components.info_card import InfoCardInterface
 
 
+class Data_cache(QWidget):
+
+    data_size_changed = pyqtSignal(int)
+
+    def __init__(self,parent=None,capacity=50):
+        super().__init__(parent)
+        self._cache = LRUCache(capacity=capacity*2)
+
+    def size(self):
+        return self._cache.size()
+
+    def json_path(self,key:str):
+        image_name = os.path.basename(key).split(".")[0]
+        return os.path.join(os.path.dirname(key), f"{image_name}.json")
+
+    def put(self,key:str):
+
+        json_path = self.json_path(key)
+
+        try:
+            data_info = jsonFileManager.load_json(json_path)
+            if data_info is None:
+                message.show_error_message("错误", "未找到标注文件!")
+                return
+            
+        except Exception as e:
+            message.show_error_message("错误", f"加载标注文件失败：{e}")
+            return
+
+        infoCard = InfoCardInterface(self)
+  
+        sorted_items = natsorted(data_info.items, key=lambda x: (cl.get_label_name(x.caseLabel)=="default", x.caseLabel)) # 先排序默认标签，再排序其他标签
+
+        infoCard.setUpdatesEnabled(False)
+
+        for item in sorted_items: 
+            infoCard.addItem(item.id,item.caseLabel,item.annotation_type)
+        
+        infoCard.setUpdatesEnabled(True)
+        
+        self._cache.put(key,(data_info,infoCard))
+        
+        self.data_size_changed.emit(self.size())
+                    
+    def get_data_info(self,key:str) -> DataInfo:
+        
+        if key not in self._cache.keys():
+            self.put(key)
+
+        return self._cache.get(key)[0]
+        
+    def get_info_card(self,key:str) -> InfoCardInterface:
+
+        if key not in self._cache.keys():
+            self.put(key)
+            
+        return self._cache.get(key)[1]
+    
+    def save_json(self,key:str):
+
+        data_info = self.get_data_info(key)
+
+        data_info.file_name = os.path.basename(key)
+        data_info.label = ""
+        data_info.issues = []
+
+        try:
+            jsonFileManager.save_json(self.json_path(key), data_info)
+        except Exception as e:
+            message.show_error_message("错误","标签文件保存失败！")
+            return
+
+
+class DataLoadThread(QThread):
+   
+    load_finished = pyqtSignal()
+
+    def __init__(self,capacity:int):
+        super().__init__()
+        self._capacity = capacity
+        self._size = 0
+        self._stop_event = threading.Event() # 用于停止线程的事件
+
+    def set_capacity(self,capacity:int):
+        self._capacity = capacity
+
+    def _on_progress_changed(self,size:int):
+        self._size = size
+
+    def run(self):
+        """子线程中执行耗时的数据加载"""
+        try:
+            
+            total_steps = 100  # 模拟加载步骤数
+            for i in range(total_steps):
+
+                if self._stop_event.is_set(): # 检查是否需要停止线程
+                    break
+                time.sleep(0.5)
+                if self._size  >= self._capacity:
+                    break
+            
+            # 加载完成，发送数据
+            self.load_finished.emit()
+        except Exception as e:
+            message.show_error_message("错误", str(e))
+
+    
+    def stop(self):
+        self._stop_event.set()
 
 class AccuracyInterface(QWidget):
     """OCR精度调整工具模块，用于调整OCR识别区域的多边形标注"""
+
+    CACHE_CAPACITY = 50
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -43,20 +157,22 @@ class AccuracyInterface(QWidget):
         self.setObjectName("accuracy_interface")
         self._title_toolbar = TitleToolBar(":app/images/image.svg",'图像标注工具')
         self._progress_widget = ImageProgressWidget(self)
-        self._image_manager = ImageManager(self)
+
+        self._image_manager = ImageManager(self,self.CACHE_CAPACITY)
+        self._data_cache = Data_cache(self,self.CACHE_CAPACITY)
+        
         self._image_canvas = PolygonsDrawImageCanvas(self)
         self._image_name_label = CommandBarLabel(self)
         self._pivot_stacked = PivotStacked(self)
         self._annotation_type = AnnotationType.DEFAULT
-        self._label_card_manager = LabelCardManager(self)
-
 
         self._commandBar1, self._commandBar2 = self.createCommandBar()
 
         self._current_dir = ""
+        self._load_thread = None
 
-
-
+        
+        
         self._progress_widget.progress.connect(self._on_progress_changed)
 
         self._image_manager.image_loaded.connect(self._display_current_image)
@@ -67,7 +183,7 @@ class AccuracyInterface(QWidget):
         self._image_manager.model_reset.connect(self._set_progress_range)
 
 
-        self._label_card_manager.data_info_signal.connect(self._pivot_stacked.create_info_card_interface)
+        self._image_manager.key_progress.connect(self._data_cache.put)
 
 
         keyManager.N.connect(self._on_n_pressed)
@@ -143,17 +259,11 @@ class AccuracyInterface(QWidget):
             bar1 = CommandBar(self)
             bar1.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
             self._show_annotations_action = Action(FIF.TAG, "标注", checkable=True,triggered=self._on_show_annotations_toggled,shortcut="S")
-            # undo_button = Action(icon.UNDO,shortcut="Z")
-            # undo_button.set_size(QSize(22, 22))
-            # redo_button = Action(icon.REDO,shortcut="Y")
-            # redo_button.set_size(QSize(22, 22))
+           
 
             bar1.addActions([
                 Action(FIF.ADD, "加载", triggered=self._on_folder_path_changed),
-                self._show_annotations_action,
-                # undo_button,
-                # redo_button,
-                
+                self._show_annotations_action, 
             ])
 
             bar1.addSeparator()
@@ -169,8 +279,10 @@ class AccuracyInterface(QWidget):
 
             bar2.addWidget(self._progress_widget)
 
+
             bar2.addActions([
-                Action(FIF.SEARCH,triggered=self._on_search_clicked),
+                Action(FIF.SEARCH,triggered=self._on_search_clicked)
+,
             ])
 
             bar2.addSeparator()
@@ -192,9 +304,35 @@ class AccuracyInterface(QWidget):
         )
 
         if folder:
+            self.stateTooltip = None
             self._current_dir = folder
             image_paths = get_image_paths(self._current_dir)
             self._image_manager.set_items(image_paths)
+
+            self.stateTooltip = StateToolTip("标注数据加载", "请耐心等待...", self.window())
+            self.stateTooltip.move(self.stateTooltip.getSuitablePos())
+            self.stateTooltip.show()
+
+            
+            if self._load_thread and self._load_thread.isRunning():
+                self._load_thread.stop()
+                self._load_thread.wait()
+
+            self._load_thread = DataLoadThread(min(self._image_manager.count,self.CACHE_CAPACITY))
+            self._data_cache.data_size_changed.connect(self._load_thread._on_progress_changed)
+            self._load_thread.load_finished.connect(self._on_load_label_finished)
+
+
+            self._load_thread.start()
+
+
+    def _on_load_label_finished(self):
+        if self.stateTooltip:
+            print("标注数据已加载完成！")
+            self.stateTooltip.setContent("标注数据已加载完成！" + ' 😆')
+            self.stateTooltip.setState(True)
+            self.stateTooltip = None
+
           
     @pyqtSlot(QPixmap)
     def _display_current_image(self, pixmap: QPixmap):
@@ -203,13 +341,9 @@ class AccuracyInterface(QWidget):
 
         self._image_canvas.load_pixmap(pixmap)
         self._image_name_label.setText(self._image_manager.current_item)
-
-        self._label_card_manager._preload_next_batch(self._image_manager.items,self._image_manager.current_index)
-
         self._load_annotations()
 
     def _on_show_annotations_toggled(self):
-
 
         if not self._image_manager or self._image_manager.is_empty():
             return
@@ -217,41 +351,24 @@ class AccuracyInterface(QWidget):
         dm.init_vars()
 
         
-
         if self._show_annotations_action.isChecked(): # 显示标注
             dm.init_data_items()
-            self._pivot_stacked.show_info_card_interface(self._image_manager.current_item,dm.data_items)
+            self._pivot_stacked.show_info_card_interface(self._data_cache.get_info_card(self._image_manager.current_item))
             return
         
         self._pivot_stacked.hide_info_card_interface()
         
     def _load_annotations(self):
         """加载标注数据"""
-        dm.data_info = self._label_card_manager.get(self._image_manager.current_item)
 
-        if dm.data_info is None:
-            message.show_error_message("错误", "未找到标注文件!")
-            return
+        dm.data_info = self._data_cache.get_data_info(self._image_manager.current_item)
 
         self._on_show_annotations_toggled()
 
     def _save_annotations(self):
 
-        if not dm.data_info:
-            return
-        
-        image_name = os.path.basename(self._image_manager.current_item)
-        json_path = os.path.join(os.path.dirname(self._image_manager.current_item), f"{image_name.split('.')[0]}.json")
+        self._data_cache.save_json(self._image_manager.current_item)
 
-        dm.data_info.file_name = image_name
-        dm.data_info.label = ""
-        dm.data_info.issues = []
-
-        try:
-            jsonFileManager.save_json(json_path, dm.data_info)
-        except Exception as e:
-            message.show_error_message("错误","标签文件保存失败！")
-            return
 
     @pyqtSlot(str)
     def _on_search_signal(self, search_text: str):
@@ -385,7 +502,7 @@ class AccuracyInterface(QWidget):
         searchFlyoutView.searchSignal.connect(self._on_search_signal)
         searchFlyoutView.set_stands([os.path.basename(p) for p in self._image_manager.items])
         Flyout.make(view = searchFlyoutView,
-                    target = self,
+                    target=self.mapToGlobal(QPoint(self.width()//2-searchFlyoutView.width()//2,self.height()//2-searchFlyoutView.height()//2)),
                     parent = self,
                     aniType = FlyoutAnimationType.DROP_DOWN)
         

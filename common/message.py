@@ -34,21 +34,20 @@ class Message(QObject):
     def show_info_message(self, title: str, content: str):
         InfoBar.info(
             title=title, content=content, orient=Qt.Horizontal,
-            isClosable=True, position=InfoBarPosition.TOP_RIGHT,
-            duration=self.DURATION, parent=self._get_valid_parent()) 
+            isClosable=True, duration=self.DURATION, position=InfoBarPosition.TOP_RIGHT,
+            parent=self._get_valid_parent()) 
 
     def show_error_message(self, title: str, content: str):
         InfoBar.error(
             title=title, content=content, orient=Qt.Horizontal,
-            isClosable=True, position=InfoBarPosition.TOP_RIGHT,
-            duration=self.DURATION, parent=self._get_valid_parent())
+            isClosable=True,duration=self.DURATION, position=InfoBarPosition.TOP_RIGHT,
+            parent=self._get_valid_parent())
 
     def show_success_message(self, title: str, content: str):
         InfoBar.success(
             title=title, content=content, orient=Qt.Horizontal,
-            isClosable=True, position=InfoBarPosition.TOP_RIGHT,
-            duration=self.DURATION, parent=self._get_valid_parent())
-
+            isClosable=True, duration=self.DURATION, position=InfoBarPosition.TOP_RIGHT,
+            parent=self._get_valid_parent())
 
     def show_message_dialog(self, title: str, content: str):
         

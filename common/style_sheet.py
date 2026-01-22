@@ -4,10 +4,8 @@ from enum import Enum
 from QtUniversalToolFrameWork.common.config import Theme, qconfig
 from QtUniversalToolFrameWork.common.style_sheet import StyleSheetBase
 
-
 class StyleSheet(StyleSheetBase, Enum):
     """ Style sheet  """
-
 
     ACCURACY_INTERFACE = "accuracy_interface"
 

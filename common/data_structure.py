@@ -7,13 +7,6 @@ from collections import defaultdict
 from copy import deepcopy
 from typing import List
 from PyQt5.QtCore import QPointF, QTimer
-from PyQt5.QtWidgets import QApplication
-
-
-
-
-
-
 
 from common.annotation import AnnotationType,AnnotationFrameBase
 from common.utils import Utils

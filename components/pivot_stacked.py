@@ -7,16 +7,15 @@ from PyQt5.QtWidgets import QFrame, QWidget, QHBoxLayout, QVBoxLayout, QLabel, Q
 from PyQt5.QtGui import QColor
 from QtUniversalToolFrameWork.components.navigation.pivot import SegmentedWidget
 from QtUniversalToolFrameWork.components.window.stacked_widget import StackedWidget
-from QtUniversalToolFrameWork.common.cache import LRUCache
 
 from common.utils import Utils
 from common.annotation import AnnotationType
 from common.style_sheet import StyleSheet
 from components.info_card import InfoCardInterface
 from components.label_card import LabelCardInterface
+from components.issue_card import IssueCardInterface
 from common.data_structure import DataItemInfo
-from common.cache_label_card import cl
-
+from common.data_structure import jsonFileManager
 class PivotStacked(QWidget):
 
     def __init__(self, parent=None):
@@ -31,8 +30,7 @@ class PivotStacked(QWidget):
 
         self.annotationInterface = StackedInfoCardInterface(self)
         self.labelInterface = LabelCardInterface(self)
-        self.issueInterface = InfoCardInterface(self)
-
+        self.issueInterface = IssueCardInterface(self)
 
         self.addSubInterface(self.annotationInterface, 'annotationInterface', '标注')
         self.addSubInterface(self.labelInterface, 'labelInterface', '标签')
@@ -72,25 +70,22 @@ class PivotStacked(QWidget):
         self.stackedWidget.addWidget(widget)
         self.pivot.addItem(routeKey=objectName, text=text)
 
-    def show_info_card_interface(self,key:str,data_items:list):
-        self.annotationInterface.show_info_card_interface(key,data_items)
+    def show_info_card_interface(self,widget:InfoCardInterface):
+        self.annotationInterface.replace_temp_widget(widget)
 
     def hide_info_card_interface(self):
         self.annotationInterface.hide_info_card_interface()
 
-    def create_info_card_interface(self,key:str,data_items:list):
-        return self.annotationInterface.create_info_card_interface(key,data_items)
 
 class StackedInfoCardInterface(QWidget):
 
-    def __init__(self, parent=None, capacity=20):
+    def __init__(self, parent=None):
         super().__init__(parent)
         
         self._default_widget = InfoCardInterface()
 
         self._temp_widget = InfoCardInterface()
         
-        self._cache = LRUCache(capacity=capacity*2)
 
         self.main_layout = QVBoxLayout(self) 
         
@@ -103,40 +98,15 @@ class StackedInfoCardInterface(QWidget):
 
         StyleSheet.ACCURACY_INTERFACE.apply(self)
 
-    def create_info_card_interface(self,key:str,data_items:list):
-
-        infoCard = self._cache.get(key)
-
-        if infoCard is not None:
-            return infoCard
-
-        infoCard = InfoCardInterface(self)
-        #背景透明
-        
-        sorted_items = natsorted(data_items, key=lambda x: (cl.get_label_name(x.caseLabel)=="default", x.caseLabel)) # 先排序默认标签，再排序其他标签
-
-        for item in sorted_items: 
-            infoCard.addItem(item.id,item.caseLabel,item.annotation_type)
-        
-        self._cache.put(key,infoCard)
-
-        return infoCard
-
     
-    def show_info_card_interface(self,key:str,data_items:list):
-
-        infoCard = self.create_info_card_interface(key,data_items)
-        
-        self._replace_temp_widget(infoCard)
-
 
     def hide_info_card_interface(self):
-        self._replace_temp_widget(self._default_widget)
+        self.replace_temp_widget(self._default_widget)
 
-    def _replace_temp_widget(self,widget:InfoCardInterface):
+    def replace_temp_widget(self,widget:InfoCardInterface):
         
         widget.setStyleSheet("background-color: transparent;")
-
+        
         self.main_layout.replaceWidget(self._temp_widget,widget) # 替换临时widget为infoCard
         self._temp_widget.hide() # 隐藏临时widget
         widget.show()

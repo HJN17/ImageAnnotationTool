@@ -11,8 +11,8 @@ class AnnotationType(Enum):
     POLYGON = "polygon" # 多边形
     LINE = "line" # 线
     POINT = "point" # 点
-    DEFAULT = "default" # 默认
-
+    DEFAULT = "default" # 默认标注框
+    
 
 class AnnotationFrameBase(ABC):
 
@@ -60,7 +60,6 @@ class AnnotationFrameBase(ABC):
     def drag_frame(self, item, clamped_point: QPointF):
         pass
     
-
     @classmethod
     def register(cls, annotation_type: AnnotationType):
         def wrapper(annotation_cls):
@@ -81,8 +80,7 @@ class AnnotationFrameBase(ABC):
         if not annotation_type:
             return False
         return annotation_type in cls.annotation_items
-    
-    
+       
 
 @AnnotationFrameBase.register(AnnotationType.POLYGON)
 @AnnotationFrameBase.register(AnnotationType.DEFAULT)
@@ -121,7 +119,7 @@ class PolygonAnnotation(AnnotationFrameBase):
             
             painter.setBrush(QBrush(color, Qt.SolidPattern))
             for point in new_points:
-                painter.drawEllipse(point, 2, 2)
+                painter.drawEllipse(point, 3, 3)
     
     
     def verify_points(self, length: int) -> bool:
@@ -203,7 +201,7 @@ class LineAnnotation(AnnotationFrameBase):
         
         painter.setBrush(QBrush(color, Qt.SolidPattern))
         for point in new_points:
-            painter.drawEllipse(point, 2, 2) 
+            painter.drawEllipse(point, 3, 3) 
         
     def verify_points(self, length:int) -> bool:
         
@@ -252,7 +250,6 @@ class LineAnnotation(AnnotationFrameBase):
         return -1
 
 
-
 @AnnotationFrameBase.register(AnnotationType.BBOX)
 class BboxAnnotation(AnnotationFrameBase):
     
@@ -291,7 +288,7 @@ class BboxAnnotation(AnnotationFrameBase):
         
         painter.setBrush(QBrush(color, Qt.SolidPattern))
         for point in new_points:
-            painter.drawEllipse(point, 2, 2)
+            painter.drawEllipse(point, 3, 3)
 
 
 
@@ -373,5 +370,5 @@ class PointAnnotation(AnnotationFrameBase):
         painter.setBrush(QBrush(color, Qt.SolidPattern))
 
         for point in new_points:
-            painter.drawEllipse(point, 2, 2) 
+            painter.drawEllipse(point, 3, 3) 
     

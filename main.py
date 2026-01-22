@@ -12,7 +12,8 @@ import os
 
 qconfig.load(qconfig.filePath())
 
-os.environ["QT_LOGGING_RULES"] = "qt.gui.icc=false"
+os.environ["QT_LOGGING_RULES"] = "qt.gui.icc=false" # 禁用ICC颜色管理，避免在某些系统上的渲染问题
+
 
 if qconfig.get(qconfig.dpiScale) == "Auto":
     QApplication.setHighDpiScaleFactorRoundingPolicy(

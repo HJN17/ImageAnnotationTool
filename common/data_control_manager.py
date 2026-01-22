@@ -240,6 +240,10 @@ class DataManager(QObject):
     def check_edge_click(self,clamped_point:QPointF) -> tuple[bool,int,int]:
         """检查是否点击了多边形边"""
         for i, item in enumerate(self.data_items):
+
+            if not cl.is_show(item.caseLabel):
+                continue
+
             best_edge_idx = item.annotation.check_edge_click(item.points,clamped_point,self.scale)
             if best_edge_idx != -1:
                 return True,i,best_edge_idx
@@ -251,6 +255,10 @@ class DataManager(QObject):
         threshold = max(6, 6/self.scale)
 
         for i, item in enumerate(self.data_items):
+
+            if not cl.is_show(item.caseLabel):
+                continue
+
             for j, point in enumerate(item.points):
 
                 dist = ((point.x() - clamped_point.x())**2 + (point.y() - clamped_point.y())**2)**0.5 # 计算距离
@@ -265,6 +273,9 @@ class DataManager(QObject):
 
         # 从后往前检查，确保后绘制的多边形优先被选中
         for i, item in enumerate(self.data_items):
+            
+            if not cl.is_show(item.caseLabel):
+                continue
             
             is_click = item.annotation.check_click(item.points, clamped_point,self.scale)
             if is_click:
@@ -406,7 +417,6 @@ class DataManager(QObject):
            
         new_data_item_1 = DataItemInfo(
                 id=str(uuid.uuid4()),
-                language="",
                 annotation_type=AnnotationType.DEFAULT,
                 caseLabel="default",
                 points=item_data_1
@@ -414,7 +424,6 @@ class DataManager(QObject):
             
         new_data_item_2 = DataItemInfo(
             id=str(uuid.uuid4()),
-            language="",
             annotation_type=AnnotationType.DEFAULT,
             caseLabel="default",
             points=item_data_2
@@ -447,7 +456,6 @@ class DataManager(QObject):
 
         data_item = DataItemInfo(
             id=str(uuid.uuid4()),
-            language="",
             annotation_type=self.annotion_frame.annotation_type,
             caseLabel="default",
             points=points

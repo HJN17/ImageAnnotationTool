@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 
 from PyQt5.QtWidgets import QWidget
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import QObject
 from QtUniversalToolFrameWork.common.icon import FluentIconBase 
 
 from common.icon import icon
@@ -11,7 +11,7 @@ from common.signal_bus import signalBus
 from common.annotation import AnnotationType
 
 
-class AccuracyFunctionBase(QWidget):
+class AccuracyFunctionBase(QObject):
     def __init__(self,icon: FluentIconBase,text:str,tip :str,checkable:bool=False, parent=None):
         super().__init__(parent)
         self._icon = icon
@@ -33,7 +33,11 @@ class AccuracyFunctionBase(QWidget):
     @property
     def checkable(self):
         return self._checkable
-
+    
+    @property
+    def shortcut(self):
+        return self._shortcut
+    
     def on_click(self, event):
         pass
 
@@ -56,6 +60,7 @@ class PolygonFunction(AccuracyFunctionBase):
     
     def on_click(self, event):
         signalBus.annotationTypeChanged.emit(AnnotationType.POLYGON)
+
 
 class BboxFunction(AccuracyFunctionBase):
 
@@ -84,14 +89,14 @@ class PointFunction(AccuracyFunctionBase):
     def on_click(self, event):
         signalBus.annotationTypeChanged.emit(AnnotationType.POINT)
 
-
 class SplitPolygonFunction(AccuracyFunctionBase):
     def __init__(self,parent=None):
-        super().__init__(icon.SPLIT,"分割多边形","分割多边形",False,parent=parent)
+        super().__init__(icon.SPLIT,"分割多边形","分割多边形 [B]",False,parent=parent)
         self.setObjectName("splitPolygonFunction")
     
     def on_click(self, event):
         signalBus.splitPolygonFunction.emit(True)
+    
 
 
 

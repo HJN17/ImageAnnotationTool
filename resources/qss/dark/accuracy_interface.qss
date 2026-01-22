@@ -25,6 +25,7 @@ PivotStacked > #stacked{
 
 InfoCardInterface,
 LabelCardInterface,
+IssueCardInterface,
 #scrollWidget{
     background-color : transparent;
     border: none;
