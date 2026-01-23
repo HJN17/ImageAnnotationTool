@@ -17,6 +17,9 @@ class icon(FluentIconBase, Enum):
     POLYGON = "polygon" 
     SPLIT = "split"
     VERTEX = "vertex"
+    ADD_POINT = "add_point"
+    HELP = "help"
+
 
 
     def path(self, theme=Theme.AUTO) -> str:

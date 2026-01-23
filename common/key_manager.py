@@ -6,9 +6,9 @@ class KeyManager(QObject):
     ESC= pyqtSignal()
     SHIFT= pyqtSignal(bool)
     N= pyqtSignal(bool)
-    M= pyqtSignal(bool)
-    D= pyqtSignal(bool)
-
+    S= pyqtSignal(bool)
+    X= pyqtSignal(bool)
+    B= pyqtSignal(bool)
 
     _INSTANCE = None 
     _INSTANCE_INIT = False 
@@ -29,10 +29,10 @@ class KeyManager(QObject):
         self.key_states = {
             Qt.Key_Shift: self.SHIFT,
             Qt.Key_N: self.N,
-            Qt.Key_M: self.M,
-            Qt.Key_D: self.D,
+            Qt.Key_S: self.S,
+            Qt.Key_X: self.X,
+            Qt.Key_B: self.B,
         }
-
 
     def release_all_keys(self):
         for key in self.key_states.keys():

@@ -22,7 +22,7 @@ class PivotStacked(QWidget):
 
         super().__init__(parent)
 
-        self.setFixedWidth(310)
+        self.setFixedWidth(280)
 
         self.pivot = SegmentedWidget(self)
         self.stackedWidget = StackedWidget(self)
@@ -36,7 +36,8 @@ class PivotStacked(QWidget):
         self.addSubInterface(self.labelInterface, 'labelInterface', '标签')
         self.addSubInterface(self.issueInterface, 'issueInterface', '批注')
 
-        self.stackedWidget.setCurrentWidget(self.annotationInterface)
+        self.stackedWidget.setCurrentWidget(self.annotationInterface) # 初始化时显示标注界面
+
         self.pivot.setCurrentItem(self.annotationInterface.objectName())
         self.pivot.currentItemChanged.connect(
             lambda k:  self.stackedWidget.setCurrentWidget(self.findChild(QWidget, k)))
@@ -82,11 +83,8 @@ class StackedInfoCardInterface(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         
-        self._default_widget = InfoCardInterface()
-
         self._temp_widget = InfoCardInterface()
         
-
         self.main_layout = QVBoxLayout(self) 
         
         self.main_layout.setContentsMargins(0, 0, 0, 0) 
@@ -98,9 +96,9 @@ class StackedInfoCardInterface(QWidget):
 
         StyleSheet.ACCURACY_INTERFACE.apply(self)
 
-    
 
     def hide_info_card_interface(self):
+        self._default_widget = InfoCardInterface()
         self.replace_temp_widget(self._default_widget)
 
     def replace_temp_widget(self,widget:InfoCardInterface):
@@ -109,5 +107,6 @@ class StackedInfoCardInterface(QWidget):
         
         self.main_layout.replaceWidget(self._temp_widget,widget) # 替换临时widget为infoCard
         self._temp_widget.hide() # 隐藏临时widget
+        widget.update()
         widget.show()
         self._temp_widget = widget

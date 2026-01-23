@@ -41,6 +41,9 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         painter.setRenderHint(QPainter.TextAntialiasing, True)
         painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
 
+
+        print("当前选中的多边形索引:", dm.current_item_index)
+        
         dm.draw(painter, self.offset,self._rotate_point)
         
         dm.temp_frame_draw(painter, self.offset,self._rotate_point)
@@ -123,7 +126,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
             dm.add_create_vertex(rotated_point)
             return
 
-        if dm.shift_pressed and event.button() == Qt.LeftButton:
+        if dm.creating_vertex_pressed and event.button() == Qt.LeftButton:
             dm.add_vertex(clamped_point)
             return
 

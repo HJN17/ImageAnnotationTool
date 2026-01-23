@@ -38,8 +38,7 @@ class DataManager(QObject):
 
         super().__init__()
         self.data_info = None
-        self.shift_pressed = False
-
+        
         self.scale = 1.0    
 
         signalBus.selectItem.connect(self._on_select_item) # 选择DataItem信号
@@ -62,6 +61,8 @@ class DataManager(QObject):
 
         self.creating_data_item = False  # 是否正在创建DataItem
         self.creating_split_vertex = False # 是否正在创建分割点
+        self.creating_vertex_pressed = False # 是否正在创建顶点
+
 
         self.annotion_frame = None # 当前正在编辑的AnnotationFrame
 
@@ -81,13 +82,14 @@ class DataManager(QObject):
     @current_item_index.setter
     def current_item_index(self, index: int):
 
-        if index < 0 or index >= len(self.data_items):
+        if index >= len(self.data_items):
             return
         
         if self.current_item_index == index:
             return
         
         self._current_item_index = index
+        print("选择了标注框索引:", index)
         signalBus.selectItem.emit(self.data_items[index].id)
     
     @property
@@ -169,9 +171,12 @@ class DataManager(QObject):
         self.data_items.remove(item)
 
         self.current_item_index = -1
+        print("1111111111111111111111删除了标注框索引:", self.current_item_index)
         self.current_point_index = -1
 
         message.show_info_message("提示", "删除了标注框！")
+
+        print("2222222222222222222222222222222222删除了标注框:", self.current_item_index)
 
         self.update_data_item.emit()
 
@@ -197,12 +202,14 @@ class DataManager(QObject):
 
         if not self.is_current_item_valid():
             return 
-        
+
+        item = self.current_data_item
+
+
         if self.current_point_index < 0 or self.current_point_index >= len(item.points):
             return 
         
-        item = self.current_data_item
-
+        
         if not item.annotation.verify_points(len(item.points)-1):
             message.show_error_message("错误", "删除点失败，点数量不符合要求！")
             return 
@@ -223,6 +230,7 @@ class DataManager(QObject):
 
             if i == self.current_item_index and not self.creating_data_item and not self.creating_split_vertex:
                 selected=True
+            
 
             item.annotation.draw(painter, self.scale, offset,cl.get_color(item.caseLabel),func,selected,item.points)
 
@@ -268,8 +276,16 @@ class DataManager(QObject):
         return False,-1,-1
 
 
-    def check_frame_click(self, clamped_point:QPointF) -> tuple[bool,int]:
+    def check_frame_click(self, clamped_point:QPointF,index:int=-1) -> tuple[bool,int]:
         """检查是否点击了多边形"""
+
+        if index != -1:
+            item = self.data_items[index]
+            is_click = item.annotation.check_click(item.points, clamped_point,self.scale)
+            if is_click:
+                return True,index
+            return False,-1
+
 
         # 从后往前检查，确保后绘制的多边形优先被选中
         for i, item in enumerate(self.data_items):
@@ -332,7 +348,7 @@ class DataManager(QObject):
                 self.annotion_frame.set_point(closest_point)
         
         else:
-            is_click,_ = self.check_frame_click(clamped_point)
+            is_click,_ = self.check_frame_click(clamped_point,self.split_item_index)
 
             if not is_click:
                 best_edge_idx,closest_point = Utils.get_intersection_point(self.get_item_points(self.split_item_index), self.annotion_frame.points[-1], clamped_point)

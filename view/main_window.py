@@ -34,7 +34,6 @@ class mWindow(MainWindow):
         self.lineFunction = LineFunction(self)
         self.pointFunction = PointFunction(self)
         self.splitPolygonFunction = SplitPolygonFunction(self)
-
         
         self.addScrollItem(self.accuracy_interface,self.defaultMouseFunction)
         self.addScrollItem(self.accuracy_interface,self.polygonFunction)

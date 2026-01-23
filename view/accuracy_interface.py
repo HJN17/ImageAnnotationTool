@@ -3,22 +3,26 @@ from natsort import natsorted
 import shutil
 import threading
 import time
-from PyQt5.QtCore import Qt,pyqtSlot,QPoint,QThread,pyqtSignal
-from PyQt5.QtGui import QColor,QPixmap
+from PyQt5.QtCore import Qt,pyqtSlot,QPoint,QThread,pyqtSignal,QUrl
+from PyQt5.QtGui import QFont,QPixmap,QDesktopServices
 from PyQt5.QtWidgets import (QWidget, QPushButton, QFrame, QHBoxLayout, QVBoxLayout, 
                            QApplication, QFileDialog, QMessageBox,QTextBrowser,QDialog)
 
+from QtUniversalToolFrameWork.common.font import getFont
 from QtUniversalToolFrameWork.common.cache import LRUCache
 from QtUniversalToolFrameWork.common.image_utils import ImageManager,get_image_paths
 from QtUniversalToolFrameWork.common.icon import Action,FluentIcon as FIF
 from QtUniversalToolFrameWork.common.cursor import CursorStyle,cursor
 from QtUniversalToolFrameWork.components.widgets.image_canvas import ImageProgressWidget,ImageSearchFlyoutView
-from QtUniversalToolFrameWork.components.widgets.label import CommandBarLabel
+from QtUniversalToolFrameWork.components.widgets.label import CommandBarLabel,BodyLabel,FluentLabelBase
 from QtUniversalToolFrameWork.components.widgets.command_bar import CommandBar
 from QtUniversalToolFrameWork.components.widgets.flyout import Flyout,FlyoutAnimationType
 from QtUniversalToolFrameWork.components.widgets.gallery_interface import TitleToolBar
 from QtUniversalToolFrameWork.components.widgets.info_bar import InfoBar,InfoBarPosition
 from QtUniversalToolFrameWork.components.widgets.state_tool_tip import StateToolTip
+from QtUniversalToolFrameWork.components.widgets.button import PushButton
+from QtUniversalToolFrameWork.components.dialog_box import CustomMessageBoxBase,CustomMessageBox
+
 
 from common.signal_bus import signalBus
 from common.style_sheet import StyleSheet
@@ -34,6 +38,85 @@ from common.icon import icon
 from components.pivot_stacked import PivotStacked
 from components.info_card import InfoCardInterface
 
+
+class TitleLabel(FluentLabelBase):
+    """ 标题文本标签 """
+    def getFont(self):
+        return getFont(16, QFont.DemiBold)
+
+class KeyLabel(FluentLabelBase):
+    """ 文本标签 """
+    def getFont(self):
+        return getFont(14, QFont.DemiBold)
+    
+class DescLabel(FluentLabelBase):
+    """ 描述文本标签 """
+    def getFont(self):
+        return getFont(14)
+
+class TitleText(QWidget):
+    def __init__(self, title:str,parent=None):
+        super().__init__(parent)
+
+        self.titleLabel = TitleLabel(title,self)
+
+        self.hBoxLayout = QHBoxLayout(self)
+        self.hBoxLayout.setContentsMargins(0, 20, 0, 10)
+        self.hBoxLayout.setSpacing(0)
+        self.hBoxLayout.addWidget(self.titleLabel,0,Qt.AlignLeft | Qt.AlignVCenter)
+
+class bodyText(QWidget):
+    def __init__(self, key:str,desc:str,parent=None):
+        super().__init__(parent)
+
+        k = key+" :" if key else ""
+
+        self.keyLabel = KeyLabel(k,self)
+        self.descLabel = DescLabel(desc,self)
+
+        self.hBoxLayout = QHBoxLayout(self)
+        self.hBoxLayout.setContentsMargins(50, 0, 0, 0)
+        self.hBoxLayout.setSpacing(0)
+        self.keyLabel.setFixedWidth(200)
+        self.hBoxLayout.addWidget(self.keyLabel,0,Qt.AlignLeft | Qt.AlignVCenter)
+        self.hBoxLayout.addWidget(self.descLabel,1,Qt.AlignLeft | Qt.AlignVCenter)
+
+class HelpMessageBox(CustomMessageBoxBase):
+    """ 标签列表设置消息框 """
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.add_title_label("✨ 基础操作快捷键")
+        
+        self.add_body_text("ESC键","取消所有操作")
+        self.add_body_text("N键开始","新建标注框")
+        self.add_body_text("N键结束","完成标注框")
+        self.add_body_text("B键","删除选中的标注框")
+        self.add_body_text("W健","切换多边形显示/隐藏")
+        self.add_body_text("S键","分割多边形标注框")
+        self.add_body_text("SHIFT键（长按）","添加标注点（标注框边缘）")
+        self.add_body_text("X键","删除选中顶点（需先选中顶点）")
+        self.add_body_text("A键","切换到上一张图片（自动保存）")
+        self.add_body_text("D键","切换到下一张图片（自动保存）")
+
+        self.add_title_label("✨ 鼠标操作")
+        self.add_body_text("左键点击","新建多边形时 - 添加顶点")
+        self.add_body_text("","选中顶点时 - 拖动调整顶点位置")
+        self.add_body_text("","选中标注框内部时 - 拖动整个标注框")
+        self.add_body_text("右键拖动","平移画布")
+        self.add_body_text("鼠标滚轮","缩放画布")
+
+        self.yesButton.setText('知道啦')
+        self.cancelButton.hide()
+        self.widget.setMinimumWidth(600)
+
+    def add_title_label(self,title:str):
+        self.viewLayout.addWidget(TitleText(title,self))
+
+    def add_body_text(self,key:str,desc:str):
+        self.viewLayout.addWidget(bodyText(key,desc,self))
+    
 
 class Data_cache(QWidget):
 
@@ -107,7 +190,6 @@ class Data_cache(QWidget):
             message.show_error_message("错误","标签文件保存失败！")
             return
 
-
 class DataLoadThread(QThread):
    
     load_finished = pyqtSignal()
@@ -150,7 +232,8 @@ class AccuracyInterface(QWidget):
     """OCR精度调整工具模块，用于调整OCR识别区域的多边形标注"""
 
     CACHE_CAPACITY = 50
-
+    EXAMPLE_URL = "https://gitcode.com/HJN17/ImageAnnotationTool"
+    
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -163,16 +246,24 @@ class AccuracyInterface(QWidget):
         
         self._image_canvas = PolygonsDrawImageCanvas(self)
         self._image_name_label = CommandBarLabel(self)
+
         self._pivot_stacked = PivotStacked(self)
         self._annotation_type = AnnotationType.DEFAULT
 
         self._commandBar1, self._commandBar2 = self.createCommandBar()
 
+        self.sourceButton = PushButton("源代码", self, FIF.GITHUB)
+        self.helpButton = PushButton("帮助", self, icon.HELP)
+
+        self._help_message_box = HelpMessageBox(self.window())
+        self._help_message_box.hide()
+
         self._current_dir = ""
         self._load_thread = None
 
-        
-        
+        self.helpButton.clicked.connect(self._help_message_box.show)
+        self.sourceButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(self.EXAMPLE_URL)))
+
         self._progress_widget.progress.connect(self._on_progress_changed)
 
         self._image_manager.image_loaded.connect(self._display_current_image)
@@ -182,17 +273,17 @@ class AccuracyInterface(QWidget):
         self._image_manager.item_inserted.connect(self._set_progress_range)
         self._image_manager.model_reset.connect(self._set_progress_range)
 
-
         self._image_manager.key_progress.connect(self._data_cache.put)
 
-
         keyManager.N.connect(self._on_n_pressed)
-        keyManager.M.connect(self._on_m_pressed)
-        keyManager.D.connect(self._on_d_pressed)
+        keyManager.S.connect(self._on_s_pressed)
+        keyManager.X.connect(self._on_x_pressed)
+        keyManager.B.connect(self._on_b_pressed)
         keyManager.SHIFT.connect(self._on_shift_pressed)
 
         signalBus.annotationTypeChanged.connect(self._annotation_type_changed)
-        signalBus.splitPolygonFunction.connect(self._on_m_pressed)
+        signalBus.splitPolygonFunction.connect(self._on_s_pressed)
+        
 
         self.init_ui()
 
@@ -227,7 +318,8 @@ class AccuracyInterface(QWidget):
 
         toolBarLayout.addWidget(self._commandBar1,0,Qt.AlignLeft)
         toolBarLayout.addWidget(self._commandBar2,1,Qt.AlignHCenter)
-        toolBarLayout.addWidget(w,0,Qt.AlignRight)
+        toolBarLayout.addWidget(self.helpButton,0,Qt.AlignRight)
+        toolBarLayout.addWidget(self.sourceButton,0,Qt.AlignRight)
     
         hBoxLayout.addWidget(self._image_canvas,1)
         hBoxLayout.addWidget(self._pivot_stacked,0)
@@ -258,7 +350,7 @@ class AccuracyInterface(QWidget):
             
             bar1 = CommandBar(self)
             bar1.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            self._show_annotations_action = Action(FIF.TAG, "标注", checkable=True,triggered=self._on_show_annotations_toggled,shortcut="S")
+            self._show_annotations_action = Action(FIF.TAG, "标注", checkable=True,triggered=self._on_show_annotations_toggled,shortcut="W")
            
 
             bar1.addActions([
@@ -273,8 +365,8 @@ class AccuracyInterface(QWidget):
             bar2.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
             
             bar2.addActions([
-                Action(FIF.LEFT_ARROW,triggered=self._image_manager.previous,shortcut="Left"),
-                Action(FIF.RIGHT_ARROW,triggered=self._image_manager.next,shortcut="Right"),
+                Action(FIF.LEFT_ARROW,triggered=self._image_manager.previous,shortcut="A"),
+                Action(FIF.RIGHT_ARROW,triggered=self._image_manager.next,shortcut="D"),
             ])
 
             bar2.addWidget(self._progress_widget)
@@ -291,7 +383,7 @@ class AccuracyInterface(QWidget):
                 Action(FIF.ROTATE,triggered=self._image_canvas.rotate_image,shortcut="R"),
                 Action(FIF.ZOOM_IN,triggered=self._image_canvas.zoom_in),
                 Action(FIF.ZOOM_OUT,triggered=self._image_canvas.zoom_out),
-                Action(FIF.DELETE,triggered=self._on_delete_image_clicked,shortcut="Delete"),
+                Action(FIF.DELETE,triggered=self._on_delete_image_clicked),
             ])
 
             return bar1,bar2
@@ -322,13 +414,10 @@ class AccuracyInterface(QWidget):
             self._data_cache.data_size_changed.connect(self._load_thread._on_progress_changed)
             self._load_thread.load_finished.connect(self._on_load_label_finished)
 
-
             self._load_thread.start()
-
 
     def _on_load_label_finished(self):
         if self.stateTooltip:
-            print("标注数据已加载完成！")
             self.stateTooltip.setContent("标注数据已加载完成！" + ' 😆')
             self.stateTooltip.setState(True)
             self.stateTooltip = None
@@ -350,7 +439,6 @@ class AccuracyInterface(QWidget):
 
         dm.init_vars()
 
-        
         if self._show_annotations_action.isChecked(): # 显示标注
             dm.init_data_items()
             self._pivot_stacked.show_info_card_interface(self._data_cache.get_info_card(self._image_manager.current_item))
@@ -418,18 +506,23 @@ class AccuracyInterface(QWidget):
         
     def _on_shift_pressed(self, pressed):
 
-        dm.shift_pressed = pressed
+        dm.creating_vertex_pressed = pressed
 
         if pressed:
             self._image_canvas.setCursor(Qt.PointingHandCursor)
         else:
             self._image_canvas.setCursor(Qt.ArrowCursor)
 
-    def _on_d_pressed(self, pressed):
+    def _on_x_pressed(self, pressed):
 
         if pressed:
             dm.delete_current_point()
-             
+    
+    def _on_b_pressed(self, pressed):
+
+        if pressed:
+            signalBus.deleteItem.emit(dm.current_data_item._id)
+
     def _on_n_pressed(self, pressed):
 
         if pressed:
@@ -452,7 +545,7 @@ class AccuracyInterface(QWidget):
             self._image_canvas.setCursor(Qt.ArrowCursor)
             self._image_canvas.update()
             
-    def _on_m_pressed(self, pressed):
+    def _on_s_pressed(self, pressed):
 
         if pressed:
             dm.creating_split_vertex = True
@@ -518,85 +611,6 @@ class AccuracyInterface(QWidget):
         self._commandBar2.setFixedWidth(min(self._commandBar2.suitableWidth(), self.width()-20-width))
         width += self._commandBar2.width()
         self._commandBar2.updateGeometry()
-
-
-    def show_shortcut_help(self):
-        """显示快捷键说明弹窗"""
-        class ShortcutDialog(QDialog):
-            def __init__(self, parent=None):
-                super().__init__(parent)
-                self.setWindowTitle("快捷键说明")
-                self.setMinimumSize(600, 400)
-                self.setModal(True)
-                
-                self.setStyleSheet("""
-                    QDialog { background-color: #f5f5f5; font-family: 'Segoe UI', Arial, sans-serif; }
-                    QTextBrowser {
-                        background-color: white;
-                        border: 1px solid #ddd;
-                        border-radius: 6px;
-                        padding: 15px;
-                        font-size: 14px;
-                        line-height: 1.6;
-                    }
-                    QPushButton {
-                        background-color: #4CAF50; color: white; border: none;
-                        border-radius: 4px; padding: 8px 16px; font-size: 14px; min-width: 80px;
-                    }
-                    QPushButton:hover { background-color: #45a049; }
-                    QPushButton:pressed { background-color: #3d8b40; }
-                """)
-                
-                layout = QVBoxLayout(self)
-                text_browser = QTextBrowser()
-                
-                shortcut_content = """
-                <style>
-                    h3 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 8px; margin-top: 20px; margin-bottom: 15px; }
-                    ul { color: #2c3e50; margin: 10px 0; padding-left: 25px; }
-                    li { margin: 8px 0; }
-                    b { color: #e74c3c; }
-                </style>
-                
-                <h3>一、基础操作快捷键</h3>
-                <ul>
-                    <li><b>N键开始</b>：新建Charset多边形</li>
-                    <li><b>N键结束</b>：完成Charset多边形</li>
-                    <li><b>ESC键</b>：取消新建多边形</li>
-                    <li><b>DEL键</b>：删除选中的Charset</li>
-                    <li><b>CTRL+S</b>：保存当前标注</li>
-                    <li><b>S键</b>：切换多边形显示/隐藏</li>
-                    <li><b>SPACE键</b>：重置视图（居中显示）</li>
-                    <li><b>SHIFT键（长按）</b>：添加顶点（点击Charset边缘）</li>
-                    <li><b>D键</b>：删除选中顶点（需先选中顶点）</li>
-                    <li><b>LEFT键</b>：切换到上一张图片（自动保存）</li>
-                    <li><b>RIGHT键</b>：切换到下一张图片（自动保存）</li>
-                </ul>
-                
-                <h3>二、鼠标操作</h3>
-                <ul>
-                    <li><b>左键点击</b>：
-                        <ul>
-                            <li>新建多边形时：添加顶点</li>
-                            <li>选中顶点时：拖动调整顶点位置</li>
-                            <li>选中Charset内部：拖动整个Charset</li>
-                        </ul>
-                    </li>
-                    <li><b>右键拖动</b>：平移画布</li>
-                    <li><b>鼠标滚轮</b>：缩放画布</li>
-                </ul>
-                """
-                text_browser.setHtml(shortcut_content)
-                
-                close_btn = QPushButton("关闭")
-                close_btn.clicked.connect(self.accept)
-                
-                layout.addWidget(text_browser)
-                layout.addWidget(close_btn, alignment=Qt.AlignRight | Qt.AlignBottom)
-        
-        dialog = ShortcutDialog(self)
-        dialog.exec_()
-
     
 
 

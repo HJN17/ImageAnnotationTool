@@ -34,9 +34,7 @@ class AccuracyFunctionBase(QObject):
     def checkable(self):
         return self._checkable
     
-    @property
-    def shortcut(self):
-        return self._shortcut
+
     
     def on_click(self, event):
         pass
@@ -45,7 +43,7 @@ class AccuracyFunctionBase(QObject):
 class DefaultMouseFunction(AccuracyFunctionBase):
 
     def __init__(self,parent=None):
-        super().__init__(icon.MOUSE,"鼠标功能","鼠标功能",True,parent=parent)
+        super().__init__(icon.MOUSE,"鼠标功能","鼠标功能 [N]",True,parent=parent)
         self.setObjectName("defaultMouseFunction")
     
     def on_click(self, event):
@@ -91,12 +89,19 @@ class PointFunction(AccuracyFunctionBase):
 
 class SplitPolygonFunction(AccuracyFunctionBase):
     def __init__(self,parent=None):
-        super().__init__(icon.SPLIT,"分割多边形","分割多边形 [B]",False,parent=parent)
+        super().__init__(icon.SPLIT,"分割多边形","分割多边形 [S]",False,parent=parent)
         self.setObjectName("splitPolygonFunction")
     
     def on_click(self, event):
         signalBus.splitPolygonFunction.emit(True)
+
+# class AddPointFunction(AccuracyFunctionBase):
+#     def __init__(self,parent=None):
+#         super().__init__(icon.ADD_POINT,"添加点","添加点 [Q]",False,parent=parent)
+#         self.setObjectName("addPointFunction")
     
+#     def on_click(self, event):
+#         signalBus.addPointFunction.emit(True)
 
 
 

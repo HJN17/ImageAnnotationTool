@@ -37,7 +37,6 @@ class InfoCardComboBox(ComboBox):
             self.clear()
 
 
-
 class InfoCardItem(QWidget):
 
     def __init__(self,routeKey:str,caseLabel : str, annotation_type:AnnotationType, parent=None):
@@ -58,6 +57,7 @@ class InfoCardItem(QWidget):
         self._viewButton = TransparentToolButton(FluentIcon.VIEW, self) # HIDE
         self._pinButton = TransparentToolButton(FluentIcon.PIN, self) # UNPIN
         self._delButton = TransparentToolButton(FluentIcon.DELETE, self)
+        self._delButton.setToolTip("删除标注框 [B]")
 
         self._comboBox.addItems(cl.get_all_labels())
 
@@ -87,13 +87,13 @@ class InfoCardItem(QWidget):
     
     def _init_ui(self):
         
-        self.setFixedSize(280, 100)
+        self.setFixedSize(250, 100)
         vBoxLayout = QVBoxLayout(self)
         vBoxLayout.setSpacing(0)
         vBoxLayout.setContentsMargins(20, 0, 20, 0)
 
-        self._annotation_type.setFixedSize(70, 32)
-        self._comboBox.setFixedSize(170, 32)
+        self._annotation_type.setFixedSize(60, 29)
+        self._comboBox.setFixedSize(150, 29)
         
         type_layout = QHBoxLayout()
         type_layout.setSpacing(10)
@@ -102,7 +102,7 @@ class InfoCardItem(QWidget):
         type_layout.addWidget(self._comboBox, 0, Qt.AlignLeft)
         
         button_layout = QHBoxLayout()
-        button_layout.setSpacing(10)
+        button_layout.setSpacing(5)
         button_layout.setContentsMargins(10, 0, 0, 0)
         button_layout.addWidget(self._personButton, 0, Qt.AlignLeft)
         button_layout.addWidget(self._viewButton, 0, Qt.AlignLeft)
@@ -268,6 +268,7 @@ class InfoCardInterface(ScrollArea):
         widget.deleteLater() # 删除部件
         del self.items[routeKey]
 
+
     def clear(self):
         for routeKey in list(self.items.keys()):
             self.removeItem(routeKey)
@@ -275,6 +276,13 @@ class InfoCardInterface(ScrollArea):
     def currentRouteKey(self):
         return self._currentRouteKey
 
+
+    def showEvent(self, event):
+
+        for k, item in self._items.items():
+            item.setSelected(False)
+
+        return super().showEvent(event)
 
     def _set_current_item(self, routeKey: str):
 

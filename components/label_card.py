@@ -45,7 +45,7 @@ class LabelCardItem(QWidget):
 
     def _init_ui(self):
         
-        self.setFixedSize(280, 40)
+        self.setFixedSize(250, 40)
         hBoxLayout = QHBoxLayout(self)
         hBoxLayout.setSpacing(0)
         hBoxLayout.setContentsMargins(20, 0, 10, 0)

@@ -9,11 +9,9 @@ from view.main_window import mWindow
 
 import os
 
-
 qconfig.load(qconfig.filePath())
 
 os.environ["QT_LOGGING_RULES"] = "qt.gui.icc=false" # 禁用ICC颜色管理，避免在某些系统上的渲染问题
-
 
 if qconfig.get(qconfig.dpiScale) == "Auto":
     QApplication.setHighDpiScaleFactorRoundingPolicy(
@@ -30,5 +28,3 @@ app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)  # 设置属性：不创�
 w = mWindow()
 w.show()
 app.exec_()
-
-
