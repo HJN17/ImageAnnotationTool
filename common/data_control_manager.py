@@ -2,6 +2,7 @@
 
 from copy import deepcopy
 import uuid
+from typing import Optional
 from PyQt5.QtCore import pyqtSignal, QObject,QPointF,Qt,QSize
 from PyQt5.QtGui import QPainter,QColor,QBrush
 from QtUniversalToolFrameWork.common.style_sheet import themeColor
@@ -16,12 +17,14 @@ from common.key_manager import keyManager
 from common.annotation import AnnotationFrameBase,AnnotationType
 from common.utils import Utils
 from common.message import message
-
+from common.case_attrbute import cattr
 
 
 class DataManager(QObject):
     
     update_data_item = pyqtSignal() # 更新DataItem信号
+    
+    select_data_item = pyqtSignal(object) # 选择DataItem信号，参数为DataItemInfo对象
 
     _INSTANCE = None 
     _INSTANCE_INIT = False 
@@ -30,6 +33,8 @@ class DataManager(QObject):
         if not cls._INSTANCE:
             cls._INSTANCE = super().__new__(cls)
         return cls._INSTANCE
+    
+
 
     def __init__(self):
         if self._INSTANCE_INIT:
@@ -37,21 +42,17 @@ class DataManager(QObject):
         self._INSTANCE_INIT = True
 
         super().__init__()
-        self.data_info = None
         
+        self.data_info = None
         self.scale = 1.0    
-
-        signalBus.selectItem.connect(self._on_select_item) # 选择DataItem信号
-        signalBus.labelComboBoxChanged.connect(self._on_item_label_changed) # 标签ComboBox改变信号
-        signalBus.deleteItem.connect(self.delete_item_by_key) # 删除DataItem信号
-
+        self._current_item_index = -1
         self.init_vars()
 
     def init_vars(self):
         
         self.data_items = []
 
-        self._current_item_index = -1  # 当前选中的DataItem索引
+        self.current_item_index = -1  # 当前选中的DataItem索引
         
         self.current_point_index = -1  # 当前选中的点索引
         self.split_item_index = -1 # 分割项索引
@@ -72,7 +73,6 @@ class DataManager(QObject):
     def init_data_items(self):
         self.data_items = self.data_info.items
         self.current_item_index = -1
-
         self.update_data_item.emit()
 
     @property
@@ -82,15 +82,15 @@ class DataManager(QObject):
     @current_item_index.setter
     def current_item_index(self, index: int):
 
-        if index >= len(self.data_items):
-            return
-        
-        if self.current_item_index == index:
+        if self._current_item_index == index:
             return
         
         self._current_item_index = index
-        print("选择了标注框索引:", index)
-        signalBus.selectItem.emit(self.data_items[index].id)
+        
+        self.select_data_item.emit(self.current_data_item)
+            
+        self.update_data_item.emit()
+
     
     @property
     def current_data_item(self) -> DataItemInfo:
@@ -100,31 +100,11 @@ class DataManager(QObject):
         return self.data_items[self.current_item_index]
 
 
-    def _on_select_item(self, routeKey: str):
 
-        if not self.data_items:
-            return
-        
-        for i, item in enumerate(self.data_items):
-            if item.id == routeKey:
-                index = i
-                break
-        else:
-            return
-        
-        if index == self.current_item_index:
-            return
-        
-        self.current_item_index = index
 
-        self.update_data_item.emit()
-
-    def _on_item_label_changed(self, routeKey: str, caseLabel: str):
+    def item_label_changed(self,caseLabel: str):
 
         if not self.is_current_item_valid():
-            return
-        
-        if self.current_data_item.id != routeKey:
             return
         
         self.current_data_item.caseLabel = caseLabel
@@ -132,20 +112,11 @@ class DataManager(QObject):
         self.update_data_item.emit()
 
 
-    def get_item_points(self, index: int) -> list[QPointF]:
+    def get_current_item_points(self, index: int) -> list[QPointF]:
         if index < 0 or index >= len(self.data_items):
             return []
         
         return self.data_items[index].points
-
-    def get_item_by_key(self, routeKey: str) -> DataItemInfo:
-        if not self.data_items:
-            return None
-        
-        for item in self.data_items:
-            if item.id == routeKey:
-                return item
-        return None
 
     def get_current_item_label(self):    
         if not self.is_current_item_valid():
@@ -157,46 +128,30 @@ class DataManager(QObject):
     def is_current_item_valid(self):
         return self.data_items and self.current_item_index >= 0 and self.current_item_index < len(self.data_items)
 
-
-    def delete_item_by_key(self, routeKey: str):
-
-        if not self.data_items:
-            return
-        
-        item = self.get_item_by_key(routeKey)
-
-        if not item:
-            return
-        
-        self.data_items.remove(item)
-
-        self.current_item_index = -1
-        print("1111111111111111111111删除了标注框索引:", self.current_item_index)
-        self.current_point_index = -1
-
-        message.show_info_message("提示", "删除了标注框！")
-
-        print("2222222222222222222222222222222222删除了标注框:", self.current_item_index)
-
-        self.update_data_item.emit()
-
-    
-    
-    def delete_item(self, index: int):
-        if index < 0 or index >= len(self.data_items):
-            return
-    
-        routeKey = self.data_items[index].id        
-        signalBus.deleteItem.emit(routeKey)
-
     def add_item(self, data_item: DataItemInfo):
-
         self.data_items.append(data_item)
-        signalBus.addItem.emit(data_item.id, data_item.caseLabel, data_item.annotation_type)
         self.current_item_index = len(self.data_items) - 1
         self.current_point_index = -1
         self.update_data_item.emit()
         message.show_success_message("提示", "添加标注框成功！")
+
+    def delete_item(self, index: int):
+        
+        if not self.data_items:
+            return
+
+        if index < 0 or index >= len(self.data_items):
+            return
+    
+        
+        self.data_items.pop(index)
+
+        self.current_item_index = -1
+        self.current_point_index = -1
+
+        message.show_info_message("提示", "删除了标注框！")
+
+        self.update_data_item.emit()
 
     def delete_current_point(self):
 
@@ -231,8 +186,8 @@ class DataManager(QObject):
             if i == self.current_item_index and not self.creating_data_item and not self.creating_split_vertex:
                 selected=True
             
-
             item.annotation.draw(painter, self.scale, offset,cl.get_color(item.caseLabel),func,selected,item.points)
+
 
     def temp_frame_draw(self, painter: QPainter, offset: QPointF,func: callable = None):
 
@@ -244,6 +199,7 @@ class DataManager(QObject):
             label = self.get_current_item_label()
             self.annotion_frame.draw(painter, self.scale, offset, cl.get_color(label), func,True)
             return
+
 
     def check_edge_click(self,clamped_point:QPointF) -> tuple[bool,int,int]:
         """检查是否点击了多边形边"""
@@ -340,7 +296,7 @@ class DataManager(QObject):
 
                 reset_split_state() 
 
-                best_edge_idx,closest_point = Utils.get_closest_point_index_and_edge(self.get_item_points(item_idx), clamped_point)
+                best_edge_idx,closest_point = Utils.get_closest_point_index_and_edge(self.get_current_item_points(item_idx), clamped_point)
 
                 self.split_point_index_start = best_edge_idx
                 self.split_item_index = item_idx
@@ -351,7 +307,7 @@ class DataManager(QObject):
             is_click,_ = self.check_frame_click(clamped_point,self.split_item_index)
 
             if not is_click:
-                best_edge_idx,closest_point = Utils.get_intersection_point(self.get_item_points(self.split_item_index), self.annotion_frame.points[-1], clamped_point)
+                best_edge_idx,closest_point = Utils.get_intersection_point(self.get_current_item_points(self.split_item_index), self.annotion_frame.points[-1], clamped_point)
                 if closest_point is None:
                     message.show_error_message("错误", "未找到与分割线相交的点！")
                     keyManager.release_all_keys()
@@ -379,7 +335,7 @@ class DataManager(QObject):
         if self.split_item_index == -1:
             return
 
-        points = self.get_item_points(self.split_item_index)
+        points = self.get_current_item_points(self.split_item_index)
 
         item_data_1 = []
         item_data_2 = []
@@ -435,6 +391,7 @@ class DataManager(QObject):
                 id=str(uuid.uuid4()),
                 annotation_type=AnnotationType.DEFAULT,
                 caseLabel="default",
+                attributes=cattr,
                 points=item_data_1
             )
             

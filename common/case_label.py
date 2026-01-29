@@ -22,7 +22,6 @@ class CaseLabel(QObject):
 
     del_label_changed = pyqtSignal(str) # 删除标签信号，参数为标签值
 
-
     _INSTANCE = None 
     _INSTANCE_INIT = False 
 

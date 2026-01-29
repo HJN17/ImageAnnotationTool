@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QWidget, QLabel, QFileDialog
 from QtUniversalToolFrameWork.common.config import qconfig
 from QtUniversalToolFrameWork.view.setting_interface import SettingInterface, SettingCardGroup
 
-
+from components.attr_setting import AttributeListSettingCard
 from components.label_setting import LabelListSettingCard
 from common.case_label import cl    
 
@@ -15,13 +15,18 @@ class SetInterface(SettingInterface):
         
         def post_init(self):
             self.labelGroup = SettingCardGroup("标签", self.scrollWidget)
-            
+
             self.labelCard = LabelListSettingCard(
                 qconfig.labelMode,
                 "标签列表",
                 parent=self.labelGroup
             )
             
+            self.attrCard = AttributeListSettingCard(
+                qconfig.attrMode,
+                "属性配置",
+                parent=self.labelGroup
+            )
 
         def _initLayout(self):
             
@@ -32,6 +37,7 @@ class SetInterface(SettingInterface):
 
             # 将卡片添加到对应设置组
             self.labelGroup.addSettingCard(self.labelCard)
+            self.labelGroup.addSettingCard(self.attrCard)
             self.personalGroup.addSettingCard(self.themeCard)
             self.personalGroup.addSettingCard(self.themeColorCard) 
             self.personalGroup.addSettingCard(self.zoomCard)

@@ -124,12 +124,13 @@ class LabelItem(QWidget):
             self._colorButton.setColor(self._color)
 
 
+
 class LabelListSettingCard(ExpandSettingCard):
     """ 标签列表设置卡片    """
 
     def __init__(self, configItem: ConfigItem, title: str, content: str = None, parent=None):
         
-        super().__init__(FluentIcon.LABEL, title, content, parent)
+        super().__init__(FluentIcon.TAG, title, content, parent)
         self.configItem = configItem
         self.addFolderButton = PushButton("添加标签", self, FluentIcon.ADD)
 

@@ -19,6 +19,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         self._dragging_data_item = False # 是否正在拖动DataItem
         self._drag_start_pos = QPointF() # 拖动开始位置
         self._data_item_original_pos = [] # 每个DataItem的原始位置（QPointF列表）
+        
         dm.update_data_item.connect(self.update)
         cl.update_label_changed.connect(self.update)
 
@@ -40,9 +41,6 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
         painter.setRenderHint(QPainter.TextAntialiasing, True)
         painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
-
-
-        print("当前选中的多边形索引:", dm.current_item_index)
         
         dm.draw(painter, self.offset,self._rotate_point)
         
@@ -111,8 +109,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         if not self.original_pixmap:
             return
 
-        dm.current_item_index = -1
-        dm.current_point_index = -1
+        
 
         current_point = event.pos()
 
@@ -152,6 +149,10 @@ class PolygonsDrawImageCanvas(ImageCanvas):
                 self._data_item_original_pos = [QPointF(p.x(), p.y()) for p in dm.data_items[item_idx].points]
                 self.update()
                 return
+            
+            
+        dm.current_item_index = -1
+        dm.current_point_index = -1
 
         super().mousePressEvent(event)
 

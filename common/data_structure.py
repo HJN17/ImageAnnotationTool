@@ -14,19 +14,17 @@ from common.case_label import cl
 from common.message import message
 
 
-
-
-
 class DataItemInfo:
 
-    def __init__(self,id : str, annotation_type : str = "default", caseLabel : str = "",points : list[QPointF] = [],):
+    def __init__(self,id : str, annotation_type : str = "default", caseLabel : str = "",points : list[QPointF] = [],attributes : List[dict[str,object]] = {}):
 
         self._id = id
         self._annotation_type = self.verify_annotation_type(annotation_type)
         self._annotation = AnnotationFrameBase.create(self._annotation_type)
         self._caseLabel = caseLabel
+        self._attributes = attributes
         self._points = self.validate_points(points)
-
+       
     @property
     def id(self) -> str:
         return self._id
@@ -38,6 +36,10 @@ class DataItemInfo:
     @property
     def caseLabel(self) -> str:
         return self._caseLabel
+        
+    @property
+    def attributes(self) -> dict[str,str]:
+        return self._attributes
     
     @property
     def points(self) -> list[QPointF]:
@@ -78,7 +80,11 @@ class DataItemInfo:
     @caseLabel.setter
     def caseLabel(self, value : str):
         self._caseLabel = value
-    
+        
+    @attributes.setter
+    def attributes(self, value : dict[str,str]):
+        self._attributes = value
+        
     @points.setter
     def points(self, value : list[QPointF]):
         
@@ -94,6 +100,15 @@ class DataItemInfo:
     def remove_point(self, index : int):
         self._points.pop(index)
 
+    def get_attribute_name(self, index : int):
+        return self._attributes[index].get("attr_name")
+    
+    def get_attribute_type(self, index : int):
+        return self._attributes[index].get("attr_type")
+
+    def get_attribute_value(self, index : int):
+        return self._attributes[index].get("attr_value")
+
     # 验证annotation_type是否合法
     def verify_annotation_type(self, value : str):
         try:
@@ -102,14 +117,18 @@ class DataItemInfo:
         except ValueError:
             
             return AnnotationType.DEFAULT
-
+    
 
     def to_dict(self):
         return {
             "annotation_type": self._annotation_type.value,
             "caseLabel": self._caseLabel,
+            "attributes": self._attributes,
             "points": [[p.x(),p.y()] for p in self._points]
         }
+
+
+
 
 class  DataInfo:
     def __init__(self, file_name : str,items : list[DataItemInfo],label : str = "default",issues : list[str] = []):
@@ -345,10 +364,12 @@ class JsonFileManager:
             
             points = [QPointF(float(p[0]), float(p[1])) for p in item_dict.get("points", [])]
 
+    
             data_item = DataItemInfo(
                 id=str(id),
                 annotation_type=item_dict.get("annotation_type", "default"),
                 caseLabel=item_dict.get("caseLabel", "default"),
+                attributes=item_dict.get("attributes", [{}]),
                 points=points
             )
 

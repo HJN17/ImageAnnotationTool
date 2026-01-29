@@ -7,7 +7,7 @@ from PyQt5.QtGui import QColor, QPainter, QBrush, QPen, QFont
 
 
 from QtUniversalToolFrameWork.common.config import isDarkTheme
-
+from QtUniversalToolFrameWork.common.style_sheet import setShadowEffect
 from QtUniversalToolFrameWork.common.font import getFont
 from QtUniversalToolFrameWork.common.icon import FluentIcon
 from QtUniversalToolFrameWork.common.color import ThemeBackgroundColor
@@ -17,10 +17,8 @@ from QtUniversalToolFrameWork.components.widgets.label import CardLabel
 from QtUniversalToolFrameWork.components.widgets.combo_box import ComboBox
 from QtUniversalToolFrameWork.components.widgets.button import TransparentToolButton,PushButton
 
-from common.annotation import AnnotationType
 from common.style_sheet import StyleSheet
 from common.case_label import cl
-from common.signal_bus import signalBus
 
 class LabelCardItem(QWidget):
     
@@ -45,7 +43,7 @@ class LabelCardItem(QWidget):
 
     def _init_ui(self):
         
-        self.setFixedSize(250, 40)
+        self.setFixedSize(290, 40)
         hBoxLayout = QHBoxLayout(self)
         hBoxLayout.setSpacing(0)
         hBoxLayout.setContentsMargins(20, 0, 10, 0)
@@ -113,9 +111,6 @@ class LabelCardInterface(ScrollArea):
         cl.add_label_changed.connect(self.addItem)
         cl.del_label_changed.connect(self.removeItem)
 
-        # for label_name in cl.get_all_labels():
-        #     self.insertItem(-1, label_name)
-
     def _init_ui(self):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # 禁用水平滚动条
         
@@ -131,7 +126,10 @@ class LabelCardInterface(ScrollArea):
         self.scrollWidget.setObjectName('scrollWidget')
 
         StyleSheet.ACCURACY_INTERFACE.apply(self)
-    
+        
+
+        setShadowEffect(self,blurRadius=10, offset=(0, 2), color=QColor(0, 0, 0, 50))
+
     @property
     def items(self):
         return self._items
