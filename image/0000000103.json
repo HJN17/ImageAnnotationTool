@@ -6,6 +6,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     279.0,
@@ -28,6 +31,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     402.0,
@@ -50,6 +56,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     516.0,
@@ -72,6 +81,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     639.0,
@@ -94,6 +106,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     755.0,
@@ -116,6 +131,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     895.0,
@@ -138,6 +156,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     993.0,
@@ -160,6 +181,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1053.0,
@@ -182,6 +206,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1105.0,
@@ -204,6 +231,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1157.0,
@@ -226,6 +256,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1275.0,
@@ -248,6 +281,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1336.0,
@@ -270,6 +306,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1835.0675818373813,
@@ -292,6 +331,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1436.0,
@@ -314,6 +356,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1498.0,
@@ -336,6 +381,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "string",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     279.0,
@@ -374,6 +422,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     282.0,
@@ -396,6 +447,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     405.0,
@@ -418,6 +472,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     538.0,
@@ -440,6 +497,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     641.0,
@@ -462,6 +522,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     784.0,
@@ -484,6 +547,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     879.0,
@@ -506,6 +572,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     988.0,
@@ -528,6 +597,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1111.0,
@@ -550,6 +622,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1235.0,
@@ -572,6 +647,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1361.0,
@@ -594,6 +672,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1576.0,
@@ -616,6 +697,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1693.0,
@@ -638,6 +722,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     2056.0538542766635,
@@ -660,6 +747,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1940.0,
@@ -682,6 +772,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     2051.0,
@@ -704,6 +797,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     2093.0,
@@ -726,6 +822,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     2223.4868004223863,
@@ -748,6 +847,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     2310.3600844772964,
@@ -770,6 +872,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "string",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     313.0200633579725,
@@ -792,6 +897,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     296.0,
@@ -814,6 +922,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     413.0,
@@ -836,6 +947,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     529.0,
@@ -858,6 +972,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     647.0,
@@ -880,6 +997,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     788.0,
@@ -902,6 +1022,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     883.0,
@@ -924,6 +1047,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     993.0,
@@ -946,6 +1072,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1133.0,
@@ -968,6 +1097,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1234.0,
@@ -990,6 +1122,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1346.0,
@@ -1012,6 +1147,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1484.0,
@@ -1034,6 +1172,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1576.0,
@@ -1056,6 +1197,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1697.0,
@@ -1078,6 +1222,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1815.0,
@@ -1100,6 +1247,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1942.0,
@@ -1122,6 +1272,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     2056.0,
@@ -1144,6 +1297,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "string",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     296.0,
@@ -1186,6 +1342,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     307.0,
@@ -1208,6 +1367,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     418.0,
@@ -1230,6 +1392,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     539.0,
@@ -1252,6 +1417,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     658.0,
@@ -1274,6 +1442,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     797.0,
@@ -1296,6 +1467,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     895.0,
@@ -1318,6 +1492,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1015.0,
@@ -1340,6 +1517,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1138.0,
@@ -1362,6 +1542,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1242.0,
@@ -1384,6 +1567,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1358.0,
@@ -1406,6 +1592,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1476.0,
@@ -1428,6 +1617,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1628.8502415458936,
@@ -1450,6 +1642,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1714.0,
@@ -1472,6 +1667,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "string",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     318.3530434782608,
@@ -1494,6 +1692,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     302.0,
@@ -1516,6 +1717,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     433.0,
@@ -1538,6 +1742,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     552.0,
@@ -1560,6 +1767,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     664.0,
@@ -1582,6 +1792,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1356.6521739130435,
@@ -1604,6 +1817,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     894.0,
@@ -1626,6 +1842,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     949.0,
@@ -1648,6 +1867,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1014.0,
@@ -1670,6 +1892,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1033.0,
@@ -1692,6 +1917,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1133.0,
@@ -1714,6 +1942,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "string",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     302.0,
@@ -1748,6 +1979,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     317.0,
@@ -1770,6 +2004,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     441.0,
@@ -1792,6 +2029,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     551.0,
@@ -1814,6 +2054,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     675.0,
@@ -1836,6 +2079,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     806.0,
@@ -1858,6 +2104,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     900.0,
@@ -1880,6 +2129,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1020.0,
@@ -1902,6 +2154,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1132.0,
@@ -1924,6 +2179,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1259.0,
@@ -1946,6 +2204,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1360.0,
@@ -1968,6 +2229,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1484.0,
@@ -1990,6 +2254,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1599.0,
@@ -2012,6 +2279,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1702.0,
@@ -2034,6 +2304,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1822.0,
@@ -2056,6 +2329,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1949.0,
@@ -2078,6 +2354,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     2033.0,
@@ -2100,6 +2379,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     2159.0,
@@ -2122,6 +2404,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "string",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     317.0,
@@ -2168,6 +2453,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     329.0,
@@ -2190,6 +2478,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     444.0,
@@ -2212,6 +2503,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     560.0,
@@ -2234,6 +2528,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     692.0,
@@ -2256,6 +2553,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     791.0,
@@ -2278,6 +2578,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     908.0,
@@ -2300,6 +2603,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1022.0,
@@ -2322,6 +2628,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1146.0,
@@ -2344,6 +2653,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1246.0,
@@ -2366,6 +2678,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1358.0,
@@ -2388,6 +2703,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1479.0,
@@ -2410,6 +2728,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1591.0,
@@ -2432,6 +2753,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1704.0,
@@ -2454,6 +2778,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1822.0,
@@ -2476,6 +2803,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1938.0,
@@ -2498,6 +2828,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     2056.0,
@@ -2520,6 +2853,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     2177.0,
@@ -2542,6 +2878,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "string",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     329.0,
@@ -2596,6 +2935,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     325.0,
@@ -2618,6 +2960,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     443.0,
@@ -2640,6 +2985,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     573.0,
@@ -2662,6 +3010,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     685.0,
@@ -2684,6 +3035,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     789.0,
@@ -2706,6 +3060,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     910.0,
@@ -2728,6 +3085,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1038.0,
@@ -2750,6 +3110,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1138.0,
@@ -2772,6 +3135,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1255.0,
@@ -2794,6 +3160,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1374.0,
@@ -2816,6 +3185,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1481.0,
@@ -2838,6 +3210,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1604.0,
@@ -2860,6 +3235,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "string",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     325.0,
@@ -2902,6 +3280,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     338.0,
@@ -2924,6 +3305,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     451.0,
@@ -2946,6 +3330,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     589.0,
@@ -2968,6 +3355,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     683.0,
@@ -2990,6 +3380,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     733.0,
@@ -3012,6 +3405,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     795.0,
@@ -3034,6 +3430,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     847.0,
@@ -3056,6 +3455,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     903.0,
@@ -3078,6 +3480,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1112.0,
@@ -3100,6 +3505,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1235.0,
@@ -3122,6 +3530,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1361.0,
@@ -3144,6 +3555,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1457.0,
@@ -3166,6 +3580,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1508.0,
@@ -3188,6 +3605,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1569.0,
@@ -3210,6 +3630,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1617.0,
@@ -3232,6 +3655,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1665.0,
@@ -3254,6 +3680,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1729.0,
@@ -3276,6 +3705,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1776.0,
@@ -3298,6 +3730,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1832.0,
@@ -3320,6 +3755,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1888.0,
@@ -3342,6 +3780,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1941.0,
@@ -3364,6 +3805,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     2000.0,
@@ -3386,6 +3830,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     2050.0,
@@ -3408,6 +3855,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     2103.0,
@@ -3430,6 +3880,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     2158.0,
@@ -3452,6 +3905,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     2211.0,
@@ -3474,6 +3930,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     2258.0,
@@ -3496,6 +3955,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "string",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     338.0,
@@ -3534,6 +3996,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     337.0,
@@ -3556,6 +4021,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     359.0,
@@ -3578,6 +4046,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     473.0,
@@ -3600,6 +4071,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     596.0,
@@ -3622,6 +4096,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     733.0,
@@ -3644,6 +4121,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     846.0,
@@ -3666,6 +4146,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     967.0,
@@ -3688,6 +4171,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1147.0,
@@ -3710,6 +4196,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1219.0,
@@ -3732,6 +4221,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1331.0,
@@ -3754,6 +4246,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1459.0,
@@ -3776,6 +4271,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1577.0,
@@ -3798,6 +4296,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1752.0,
@@ -3820,6 +4321,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1819.0,
@@ -3842,6 +4346,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     1938.0,
@@ -3864,6 +4371,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     2076.0,
@@ -3886,6 +4396,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     2190.0,
@@ -3908,6 +4421,9 @@
         {
             "annotation_type": "default",
             "caseLabel": "string",
+            "attributes": [
+                {}
+            ],
             "points": [
                 [
                     337.0,

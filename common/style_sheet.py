@@ -8,6 +8,7 @@ class StyleSheet(StyleSheetBase, Enum):
     """ Style sheet  """
 
     ACCURACY_INTERFACE = "accuracy_interface"
+    INFO_CARD = "info_card"
 
     def path(self, theme=Theme.AUTO):
         theme = qconfig.themeMode.value if theme == Theme.AUTO else theme

@@ -39,8 +39,19 @@ class CaseAttribute(QObject):
 
         self._items = []
 
+    @property
+    def items(self) -> List[dict]:
+        return self._items
 
-    def set_attr(self, items:list):
+
+    def get_items(self, label_name: str) -> List[dict]:
+        items = []
+        for item in self._items:
+            if item["label_name"] == label_name:
+                items.append(item)
+        return items
+
+    def set_attr(self, items:list,show_msg:bool=True):
         
         self._items.clear()
 
@@ -74,8 +85,9 @@ class CaseAttribute(QObject):
 
             temp_items.append(temp_dict)
             
-
-        message.show_success_message("提示",f"属性设置成功😄")
+        if show_msg:
+            message.show_success_message("提示",f"属性设置成功😄")
+            
         qconfig.set(qconfig.attrMode,temp_items)
         self._items = deepcopy(temp_items)
 
@@ -96,6 +108,11 @@ class CaseAttribute(QObject):
         return AttributeType.OPTION
     
     def get_attr_value(self, label_name: str,attr_name: str):
+        
+        type = self.get_attr_type(label_name,attr_name)
+        if type == AttributeType.INPUT:
+            return [] # 输入框默认值为空
+
         for item in self._items:
             if item["label_name"] == label_name:
                 if attr_name in item.keys():

@@ -24,6 +24,8 @@
 
 
         <file>qss/dark/accuracy_interface.qss</file>
+        <file>qss/dark/info_card.qss</file>
         <file>qss/light/accuracy_interface.qss</file>
+        <file>qss/light/info_card.qss</file>
     </qresource>
 </RCC>

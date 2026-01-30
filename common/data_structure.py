@@ -16,7 +16,7 @@ from common.message import message
 
 class DataItemInfo:
 
-    def __init__(self,id : str, annotation_type : str = "default", caseLabel : str = "",points : list[QPointF] = [],attributes : List[dict[str,object]] = {}):
+    def __init__(self,id : str, annotation_type : str = "default", caseLabel : str = "",points : list[QPointF] = [],attributes : List[dict[str,object]] = []):
 
         self._id = id
         self._annotation_type = self.verify_annotation_type(annotation_type)

@@ -283,7 +283,6 @@ class AttributeItem(QWidget):
             return
         
         self.attr_value.remove(self._valueComboBox.currentText())
-        print("删除选项值:",self.attr_value)
         self._valueComboBox.removeItem(self._valueComboBox.currentIndex())
 
         self._valueComboBox.setCurrentIndex(self._valueComboBox.count() - 1) if self._valueComboBox.count() > 0 else self._valueComboBox.setCurrentText("")
@@ -305,14 +304,16 @@ class AttributeListSettingCard(ExpandSettingCard):
         attrs = qconfig.get(self.configItem).copy()
         for item in attrs:
             self._addAttrlItem(item.get("label_name"),item.get("attr_name"),item.get("attr_type"),item.get("attr_value") if item.get("attr_value") else [])
-       
+
+        self.save_all_attributes(False)
+
         #在应用的中间展示
         self._msgBox = AttributeMessageBox(self.window())
         self._msgBox.yesButtonClicked.connect(self._onAddLabel)
         self._msgBox.hide()
 
         self.selectButton.clicked.connect(self._msgBox.show)
-        self.saveButton.clicked.connect(self.save_all_attributes)
+        self.saveButton.clicked.connect(lambda: self.save_all_attributes(True))
         
         self._init_ui()
 
@@ -354,7 +355,7 @@ class AttributeListSettingCard(ExpandSettingCard):
         item.deleteLater()
         self._adjustViewSize()
 
-    def save_all_attributes(self):
+    def save_all_attributes(self,show_msg:bool=True):
         all_attributes = []
         for item in self._items:
             attr_data = {
@@ -365,4 +366,4 @@ class AttributeListSettingCard(ExpandSettingCard):
                 }
             all_attributes.append(attr_data)
         
-        cattr.set_attr(all_attributes)
+        cattr.set_attr(all_attributes,show_msg)

@@ -37,13 +37,11 @@ class AttributeListValidator(ConfigValidator):
 
 labelConfigItem = ConfigItem(
         "Labels", "LabelList", [], LabelListValidator())
-
 setattr(qconfig, "labelMode", labelConfigItem)
 
 
 attrConfigItem = ConfigItem(
         "Attributes", "", [], AttributeListValidator())
-
 setattr(qconfig, "attrMode", attrConfigItem)
 
 

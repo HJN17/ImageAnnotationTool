@@ -1,0 +1,32 @@
+QGroupBox{
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 8px;  
+    margin-top: 8px; 
+}
+
+
+QGroupBox::title { 
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 15px;
+    top: 0px; 
+    color: black; 
+}
+
+CustomLineEdit {
+    color: black;
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 13);
+    border-radius: 5px;
+    padding: 0px 10px;
+}
+
+
+CustomLineEdit:hover {
+    background-color: rgba(249, 249, 249, 0.5);
+}
+
+CustomLineEdit:focus{
+    background-color: white;
+}
+

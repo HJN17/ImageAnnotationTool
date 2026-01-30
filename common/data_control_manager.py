@@ -46,6 +46,7 @@ class DataManager(QObject):
         self.data_info = None
         self.scale = 1.0    
         self._current_item_index = -1
+
         self.init_vars()
 
     def init_vars(self):
@@ -63,7 +64,6 @@ class DataManager(QObject):
         self.creating_data_item = False  # 是否正在创建DataItem
         self.creating_split_vertex = False # 是否正在创建分割点
         self.creating_vertex_pressed = False # 是否正在创建顶点
-
 
         self.annotion_frame = None # 当前正在编辑的AnnotationFrame
 
@@ -110,6 +110,7 @@ class DataManager(QObject):
         self.current_data_item.caseLabel = caseLabel
 
         self.update_data_item.emit()
+        self.select_data_item.emit(self.current_data_item)
 
 
     def get_current_item_points(self, index: int) -> list[QPointF]:
