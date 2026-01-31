@@ -21,6 +21,9 @@ class AttributeType(Enum):
 
 class CaseAttribute(QObject):
 
+
+    update_attr_changed = pyqtSignal()
+
     _INSTANCE = None 
     _INSTANCE_INIT = False 
 
@@ -46,9 +49,12 @@ class CaseAttribute(QObject):
 
     def get_items(self, label_name: str) -> List[dict]:
         items = []
+
         for item in self._items:
-            if item["label_name"] == label_name:
+            if item["label_name"] == "default" or item["label_name"] == label_name:
                 items.append(item)
+
+
         return items
 
     def set_attr(self, items:list,show_msg:bool=True):
@@ -87,10 +93,12 @@ class CaseAttribute(QObject):
             
         if show_msg:
             message.show_success_message("提示",f"属性设置成功😄")
-            
+        
+        
         qconfig.set(qconfig.attrMode,temp_items)
         self._items = deepcopy(temp_items)
 
+        self.update_attr_changed.emit()
 
     def get_attr_name(self, label_name: str) -> List[str]:
         name = []

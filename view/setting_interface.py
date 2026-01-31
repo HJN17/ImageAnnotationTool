@@ -18,6 +18,7 @@ class SetInterface(SettingInterface):
 
             self.labelCard = LabelListSettingCard(
                 qconfig.labelMode,
+                qconfig.labelColorMode,
                 "标签列表",
                 parent=self.labelGroup
             )

@@ -6,7 +6,7 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
-            "attributes": {},
+            "attributes": [],
             "points": [
                 [
                     933.0685714285714,
@@ -29,7 +29,7 @@
         {
             "annotation_type": "default",
             "caseLabel": "character",
-            "attributes": {},
+            "attributes": [],
             "points": [
                 [
                     1216.2178729823502,

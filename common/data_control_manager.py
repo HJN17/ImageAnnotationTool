@@ -100,7 +100,12 @@ class DataManager(QObject):
         return self.data_items[self.current_item_index]
 
 
-
+    def set_current_attribute(self,attr_name:str,attr_value:str):
+        if not self.is_current_item_valid():
+            return
+        
+        self.current_data_item.set_attribute_value(attr_name,attr_value)
+    
 
     def item_label_changed(self,caseLabel: str):
 
@@ -392,7 +397,7 @@ class DataManager(QObject):
                 id=str(uuid.uuid4()),
                 annotation_type=AnnotationType.DEFAULT,
                 caseLabel="default",
-                attributes=cattr,
+                attributes=[],
                 points=item_data_1
             )
             
@@ -400,6 +405,7 @@ class DataManager(QObject):
             id=str(uuid.uuid4()),
             annotation_type=AnnotationType.DEFAULT,
             caseLabel="default",
+            attributes=[],
             points=item_data_2
         )
 
@@ -432,6 +438,7 @@ class DataManager(QObject):
             id=str(uuid.uuid4()),
             annotation_type=self.annotion_frame.annotation_type,
             caseLabel="default",
+            attributes=[],
             points=points
         )
         

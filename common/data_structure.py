@@ -16,13 +16,15 @@ from common.message import message
 
 class DataItemInfo:
 
-    def __init__(self,id : str, annotation_type : str = "default", caseLabel : str = "",points : list[QPointF] = [],attributes : List[dict[str,object]] = []):
+    def __init__(self,id : str, annotation_type : str = "default", caseLabel : str = "",points : list[QPointF] = [],attributes : list[dict[str,str]] = []):
 
         self._id = id
         self._annotation_type = self.verify_annotation_type(annotation_type)
         self._annotation = AnnotationFrameBase.create(self._annotation_type)
         self._caseLabel = caseLabel
         self._attributes = attributes
+        if type(self._attributes) != list:
+            self._attributes = []
         self._points = self.validate_points(points)
        
     @property
@@ -38,7 +40,7 @@ class DataItemInfo:
         return self._caseLabel
         
     @property
-    def attributes(self) -> dict[str,str]:
+    def attributes(self) -> list[dict[str,str]]:
         return self._attributes
     
     @property
@@ -82,7 +84,7 @@ class DataItemInfo:
         self._caseLabel = value
         
     @attributes.setter
-    def attributes(self, value : dict[str,str]):
+    def attributes(self, value : list[dict[str,str]]):
         self._attributes = value
         
     @points.setter
@@ -100,16 +102,32 @@ class DataItemInfo:
     def remove_point(self, index : int):
         self._points.pop(index)
 
-    def get_attribute_name(self, index : int):
-        return self._attributes[index].get("attr_name")
-    
-    def get_attribute_type(self, index : int):
-        return self._attributes[index].get("attr_type")
 
-    def get_attribute_value(self, index : int):
-        return self._attributes[index].get("attr_value")
 
-    # 验证annotation_type是否合法
+    def is_attribute_exist(self, attr_name : str) -> bool:
+        for attr in self._attributes:
+            if attr["attr_name"] == attr_name:
+                return True
+        return False
+
+    def get_attribute_value(self, attr_name : str):
+        
+        for attr in self._attributes:
+            if attr["attr_name"] == attr_name:
+                return attr["attr_value"]
+            
+        return None
+
+    def set_attribute_value(self, attr_name : str, value : str):
+       
+        for attr in self._attributes:
+            if attr["attr_name"] == attr_name:
+                attr["attr_value"] = value
+                return
+            
+
+        self._attributes.append({"attr_name": attr_name, "attr_value": value})
+
     def verify_annotation_type(self, value : str):
         try:
             return AnnotationType(value)
@@ -369,7 +387,7 @@ class JsonFileManager:
                 id=str(id),
                 annotation_type=item_dict.get("annotation_type", "default"),
                 caseLabel=item_dict.get("caseLabel", "default"),
-                attributes=item_dict.get("attributes", [{}]),
+                attributes=item_dict.get("attributes", []),
                 points=points
             )
 

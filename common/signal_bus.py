@@ -10,4 +10,5 @@ class SignalBus(QObject):
     splitPolygonFunction = pyqtSignal(bool)
     addPointFunction = pyqtSignal(bool)
 
+
 signalBus = SignalBus()

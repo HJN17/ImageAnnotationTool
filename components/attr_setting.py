@@ -22,6 +22,7 @@ from QtUniversalToolFrameWork.components.widgets.line_edit import CustomLineEdit
 from QtUniversalToolFrameWork.components.widgets.combo_box import ComboBox
 from QtUniversalToolFrameWork.components.widgets.tool_tip import ToolTipFilter
 from common.case_label import cl
+from common.signal_bus import signalBus
 from common.case_attrbute import cattr,AttributeType
 from common.message import message
 
@@ -357,13 +358,27 @@ class AttributeListSettingCard(ExpandSettingCard):
 
     def save_all_attributes(self,show_msg:bool=True):
         all_attributes = []
-        for item in self._items:
-            attr_data = {
+
+        #优先保存default属性
+        for item in self._items :
+            if item.label_name == "default":
+                attr_data = {
                     "label_name": item.label_name,
                     "attr_name": item.attr_name,
                     "attr_type": item.attr_type,
                     "attr_value": deepcopy(item.attr_value),
                 }
-            all_attributes.append(attr_data)
+                all_attributes.append(attr_data)
+
+
+        for item in self._items:
+            if item.label_name != "default":
+                attr_data = {
+                    "label_name": item.label_name,
+                    "attr_name": item.attr_name,
+                    "attr_type": item.attr_type,
+                    "attr_value": deepcopy(item.attr_value),
+                }
+                all_attributes.append(attr_data)
         
         cattr.set_attr(all_attributes,show_msg)

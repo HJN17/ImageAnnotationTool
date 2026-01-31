@@ -18,10 +18,11 @@ from QtUniversalToolFrameWork.components.dialog_box import CustomMessageBoxBase,
 from QtUniversalToolFrameWork.components.widgets.button import TransparentToolButton,PushButton,ColorButton
 from QtUniversalToolFrameWork.components.widgets.label import BodyLabel,CaptionLabel
 from QtUniversalToolFrameWork.components.widgets.line_edit import LineEdit
+from QtUniversalToolFrameWork.components.dialog_box import ColorDialog
+
 
 from common.case_label import cl
-
-
+from common.utils import Utils
 
 class AddLabelMessageBox(CustomMessageBoxBase):
     """ 标签列表设置消息框 """
@@ -69,10 +70,11 @@ class AddLabelMessageBox(CustomMessageBoxBase):
         
         return super().showEvent(e)
 
-
 class LabelItem(QWidget):
 
     removed = pyqtSignal(QWidget)
+
+    colorChanged = pyqtSignal()
 
     def __init__(self, label_name: str,color:QColor, parent=None):
         super().__init__(parent=parent)
@@ -94,7 +96,7 @@ class LabelItem(QWidget):
             self._closeButton.hide()
 
         cl.color_label_changed.connect(self._update_color)
-
+        self._colorButton.clicked.connect(self.__showColorDialog)
         self._init_ui()
 
     def _init_ui(self):
@@ -123,15 +125,32 @@ class LabelItem(QWidget):
             self._color = cl.get_color(label)
             self._colorButton.setColor(self._color)
 
+    def __showColorDialog(self):
+        """ 显示颜色选择对话框 """
 
+        if self._label_name == "default":
+            return
+
+        w = ColorDialog(self._color, '选择颜色', self.window())
+        w.colorChanged.connect(self.__onColorChanged)
+        w.exec() 
+
+    def __onColorChanged(self, color: QColor):
+        """ 颜色选择对话框颜色改变信号槽函数 """
+        self._color = color
+        self._colorButton.setColor(self._color)
+        cl._set_color(self._label_name, self._color)
+        self.colorChanged.emit()
 
 class LabelListSettingCard(ExpandSettingCard):
     """ 标签列表设置卡片    """
 
-    def __init__(self, configItem: ConfigItem, title: str, content: str = None, parent=None):
+    def __init__(self, labelConfigItem: ConfigItem,labelColorConfigItem: ConfigItem, title: str, content: str = None, parent=None):
         
         super().__init__(FluentIcon.TAG, title, content, parent)
-        self.configItem = configItem
+        self.labelConfigItem = labelConfigItem
+        self.labelColorConfigItem = labelColorConfigItem
+
         self.addFolderButton = PushButton("添加标签", self, FluentIcon.ADD)
 
         #在应用的中间展示
@@ -148,22 +167,23 @@ class LabelListSettingCard(ExpandSettingCard):
         self.viewLayout.setSpacing(19) 
         self.viewLayout.setContentsMargins(48, 18, 0, 18)
         
-        labels = qconfig.get(self.configItem).copy()
+        labels = qconfig.get(self.labelConfigItem).copy()
+        labelColors = qconfig.get(self.labelColorConfigItem).copy()
 
-        for label in labels:
-            self._addLabelItem(label)
+        for i in range(len(labels)):
+            label = labels[i]
+            color = labelColors[i]
+            self._addLabelItem(label,color)
 
         self.addFolderButton.clicked.connect(self._msgBox.show)
+        
+    def _addLabelItem(self, label: str,color:QColor):
 
-        
-    def _addLabelItem(self, label: str):
-        
-        cl.set_label(label)
+        cl.set_label(label,color)
 
-        color = cl.get_color(label)
-        
         item = LabelItem(label, color, self.view)
         item.removed.connect(self._removeLabel)
+        item.colorChanged.connect(self._set_label_colors)
         self.viewLayout.addWidget(item)
         item.show()
         self._adjustViewSize()
@@ -172,10 +192,24 @@ class LabelListSettingCard(ExpandSettingCard):
 
         if label_name in cl.get_all_labels():
             return
+        
+        color = Utils.generate_random_color()
+        self._addLabelItem(label_name,color)
 
-        self._addLabelItem(label_name)
-        qconfig.set(self.configItem, cl.get_all_labels())
+        self._set_label_colors()
 
+
+    def _set_label_colors(self):
+        """ 设置标签颜色 """
+        labelAndColors = cl.get_all_label_and_colors()
+
+        labels = [label for label,_ in labelAndColors]
+        colors = [color for _,color in labelAndColors]
+
+        qconfig.set(self.labelConfigItem, labels)
+        qconfig.set(self.labelColorConfigItem, colors)
+
+        
     def _removeLabel(self, item: LabelItem):
 
         if item.label_name not in cl.get_all_labels():
@@ -185,4 +219,5 @@ class LabelListSettingCard(ExpandSettingCard):
         self.viewLayout.removeWidget(item)
         item.deleteLater()
         self._adjustViewSize()
-        qconfig.set(self.configItem, cl.get_all_labels())
+        self._set_label_colors()
+

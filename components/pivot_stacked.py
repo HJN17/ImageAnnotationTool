@@ -69,6 +69,9 @@ class PivotStacked(QWidget):
         self.pivot.addItem(routeKey=objectName, text=text)
 
     def show_info_card_interface(self,item:DataItemInfo):
+        
+        print(item.to_dict())
+
         self.annotationInterface.show_item(item.caseLabel,item.annotation_type)
 
     

@@ -51,6 +51,7 @@ class CaseLabel(QObject):
     
     def set_label(self, label_value: str, color: QColor= None, is_show: bool = True):
 
+
         if label_value in self._label.keys():
             return
         
@@ -77,7 +78,10 @@ class CaseLabel(QObject):
     
     def get_all_labels(self):
         return self._label.keys()
-
+    
+    def get_all_label_and_colors(self):
+        return [[label,self._label[label]["color"]]for label in self._label.keys()]
+    
     def get_all_show_labels(self):
         return [label for label in self._label.keys() if self._label[label]["show"]]
     

@@ -1,5 +1,5 @@
 # coding:utf-8
-
+from copy import deepcopy
 from PyQt5.QtCore import Qt,QRect,QRectF,QPoint,pyqtSignal
 from PyQt5.QtWidgets import QGroupBox, QWidget, QHBoxLayout, QVBoxLayout,QLineEdit
 from PyQt5.QtGui import QColor, QPainter, QBrush, QPainterPath,QPen
@@ -14,7 +14,7 @@ from QtUniversalToolFrameWork.components.widgets import ScrollArea
 from QtUniversalToolFrameWork.components.widgets.label import CardLabel
 from QtUniversalToolFrameWork.components.widgets.combo_box import ComboBox
 from QtUniversalToolFrameWork.components.widgets.button import TransparentToolButton
-from QtUniversalToolFrameWork.components.widgets.line_edit import CustomLineEdit,LineEdit
+from QtUniversalToolFrameWork.components.widgets.line_edit import LineEdit
 
 from common.annotation import AnnotationType
 from common.style_sheet import StyleSheet
@@ -55,7 +55,7 @@ class CustomLineEdit(QLineEdit):
         self.setAlignment(Qt.AlignLeft)  # 居中对齐
         self.setFocusPolicy(Qt.NoFocus)  # 设置无焦点策略
         self.setFixedHeight(25)  # 设置固定高度
-        self.setFont(getFont(12))  # 设置字体
+        self.setFont(getFont(14))  # 设置字体
 
         StyleSheet.INFO_CARD.apply(self)
 
@@ -84,14 +84,15 @@ class CustomLineEdit(QLineEdit):
 
 class InfoCardItem(QWidget):
 
-    def __init__(self,caseLabel : str, annotation_type:AnnotationType, parent=None):
+    def __init__(self,data_item:DataItemInfo, parent=None):
         super().__init__(parent)
 
-        self._color = cl.get_color(caseLabel)
-        self._original_case_label = caseLabel
-        self._case_label = caseLabel if caseLabel in cl.get_all_labels() else "default"
+        self._data = deepcopy(data_item)
 
-        self._annotation_type = CardLabel(annotation_type.value.upper(), self)
+        self._color = cl.get_color(self._data.caseLabel)
+        self._case_label = self._data.caseLabel if self._data.caseLabel in cl.get_all_labels() else "default"
+
+        self._annotation_type = CardLabel(self._data.annotation_type.value.upper(), self)
         self._label_comboBox = InfoCardComboBox(self)
 
         self._personButton = TransparentToolButton(FluentIcon.ROBOT, self) 
@@ -119,20 +120,20 @@ class InfoCardItem(QWidget):
 
         self.vBoxLayout = QVBoxLayout(self)
         self.vBoxLayout.setSpacing(10)
-        self.vBoxLayout.setContentsMargins(20, 20, 20, 20)
+        self.vBoxLayout.setContentsMargins(10, 20, 10, 20)
 
         self._annotation_type.setFixedSize(60, 31)
         self._label_comboBox.setFixedSize(170, 31)
         
         type_layout = QHBoxLayout()
         type_layout.setSpacing(10)
-        type_layout.setContentsMargins(10, 0, 10, 0)
+        type_layout.setContentsMargins(20, 0, 20, 0)
         type_layout.addWidget(self._annotation_type, 0, Qt.AlignLeft)
         type_layout.addWidget(self._label_comboBox, 0, Qt.AlignLeft)
         
         button_layout = QHBoxLayout()
         button_layout.setSpacing(5)
-        button_layout.setContentsMargins(10, 0, 0, 0)
+        button_layout.setContentsMargins(20, 0, 0, 0)
         button_layout.addWidget(self._personButton, 0, Qt.AlignLeft)
         button_layout.addWidget(self._viewButton, 0, Qt.AlignLeft)
         button_layout.addWidget(self._pinButton, 0, Qt.AlignLeft)
@@ -146,13 +147,13 @@ class InfoCardItem(QWidget):
         attr_items = cattr.get_items(self._case_label)
 
         if attr_items:
-            self.vBoxLayout.setContentsMargins(10, 20, 10, 20)
-            self.attr_group = QGroupBox("属性选项",self)
+            self.attr_group = QGroupBox("属性选项", self)
             self.attr_group.setFont(getFont(13))
             attr_group_vBoxLayout = QVBoxLayout(self.attr_group)
             attr_group_vBoxLayout.setSpacing(10)
             attr_group_vBoxLayout.setContentsMargins(20, 20, 20, 10)
             attr_group_vBoxLayout.setAlignment(Qt.AlignTop)
+            
             for attr in attr_items:
                 attr_layout = QHBoxLayout()
                 attr_layout.setSpacing(20)
@@ -161,20 +162,35 @@ class InfoCardItem(QWidget):
 
                 if attr["attr_type"] == AttributeType.OPTION.value:
                     temp_attr_value = InfoCardComboBox(self)
+                    attr_name = attr["attr_name"]
                     temp_attr_value.addItems(attr["attr_value"])
+
+                    if self._data.is_attribute_exist(attr_name):
+                        temp_attr_value.setCurrentText(self._data.get_attribute_value(attr_name))
+                    else:
+                        dm.set_current_attribute(attr_name, temp_attr_value.currentText())
+
+                    temp_attr_value.currentTextChanged.connect(
+                        lambda text, name=attr_name: dm.set_current_attribute(name, text)
+                    )
                 else:
                     temp_attr_value = CustomLineEdit(self)
-                
+                    attr_name = attr["attr_name"]
+                    if self._data.is_attribute_exist(attr_name):
+                        temp_attr_value.setText(self._data.get_attribute_value(attr_name))
+
+                    temp_attr_value.textChanged.connect(
+                        lambda text, name=attr_name: dm.set_current_attribute(name, text)
+                    )
+
                 temp_attr_name.setFixedSize(50, 27)
                 temp_attr_value.setFixedSize(160, 27)
+
                 attr_layout.addWidget(temp_attr_name, 0, Qt.AlignLeft)
                 attr_layout.addWidget(temp_attr_value, 0, Qt.AlignLeft)
                 attr_group_vBoxLayout.addLayout(attr_layout)
 
-
             self.vBoxLayout.addWidget(self.attr_group)
-
-
 
         self._adjustViewSize()
         setShadowEffect(self,blurRadius=10, offset=(0, 2), color=QColor(0, 0, 0, 50))
@@ -189,7 +205,7 @@ class InfoCardItem(QWidget):
         
         self._label_comboBox.addItem(label)
 
-        if self._original_case_label == label:
+        if self._data.caseLabel == label:
             self._set_case_label(label)
             self._label_comboBox.setCurrentText(label)
         
@@ -210,7 +226,7 @@ class InfoCardItem(QWidget):
         self._case_label = case_label if case_label in cl.get_all_labels() else "default"
 
         if self._case_label != "default":
-            self._original_case_label = case_label
+            self._data.caseLabel = case_label
 
         self._color = cl.get_color(case_label)
         self._update_show(self._case_label)
@@ -243,10 +259,9 @@ class InfoCardItem(QWidget):
 
         super().paintEvent(event)
     
-
     def _adjustViewSize(self):
         h = self.vBoxLayout.sizeHint().height()
-        self.setFixedHeight(h+10)
+        self.setFixedHeight(h)
 
 class InfoCardInterface(ScrollArea):
    
@@ -255,14 +270,15 @@ class InfoCardInterface(ScrollArea):
 
         self.scrollWidget = QWidget(self)
 
-        self._temp_widget = QWidget()
-
         dm.select_data_item.connect(self.show_item)
+
+    
+
+        cattr.update_attr_changed.connect(lambda:self.show_item(dm.current_data_item))
 
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # 禁用水平滚动条
 
-        
-
+    
         self._init_ui()
 
     def _init_ui(self):
@@ -283,18 +299,24 @@ class InfoCardInterface(ScrollArea):
 
     def show_item(self, data_item:DataItemInfo):
 
+        self.all_hide()
+
         if data_item is None:
-            self._temp_widget.hide()
             return
 
-        widget = InfoCardItem(data_item.caseLabel, data_item.annotation_type, self.scrollWidget)
+        widget = InfoCardItem(data_item, self.scrollWidget)
 
-        self.replace_temp_widget(widget)
+        self.vBoxLayout.addWidget(widget)
     
-        
-    def replace_temp_widget(self,widget:InfoCardItem):
-        self.vBoxLayout.replaceWidget(self._temp_widget,widget) # 替换临时widget为infoCard
-        self._temp_widget.hide()# 隐藏临时widget
-        widget.show()
-        self._temp_widget = widget
+   
+    def all_hide(self):
+    
+        for i in reversed(range(self.vBoxLayout.count())): 
+            w = self.vBoxLayout.itemAt(i).widget()
+            
+            if isinstance(w, InfoCardItem):
+                w.hide() # 移除部件
+                w.deleteLater()
+            
+
  
