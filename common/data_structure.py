@@ -10,8 +10,6 @@ from PyQt5.QtCore import QPointF, QTimer
 
 from common.annotation import AnnotationType,AnnotationFrameBase
 from common.utils import Utils
-from common.case_label import cl
-from common.message import message
 
 
 class DataItemInfo:
@@ -25,7 +23,11 @@ class DataItemInfo:
         self._attributes = attributes
         if type(self._attributes) != list:
             self._attributes = []
-        self._points = self.validate_points(points)
+
+        if not self._annotation_type.validate_points(len(points)):
+           raise ValueError("点数量不符合要求")
+
+        self._points = points
        
     @property
     def id(self) -> str:
@@ -59,17 +61,8 @@ class DataItemInfo:
     def annotation(self) -> AnnotationFrameBase:
         return self._annotation
 
-    def validate_points(self, points : list[QPointF]):
 
-        length = len(points)
-
-        if not self._annotation.verify_points(length):
-
-            message.show_message_dialog("错误!", "点的数量不符合要求")
-
-            raise Exception("The number of points does not meet the requirements.")
-        
-        return points
+    
 
     @id.setter
     def id(self, value : str):
@@ -101,7 +94,6 @@ class DataItemInfo:
     
     def remove_point(self, index : int):
         self._points.pop(index)
-
 
 
     def is_attribute_exist(self, attr_name : str) -> bool:

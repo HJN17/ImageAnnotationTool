@@ -11,4 +11,6 @@ class SignalBus(QObject):
     addPointFunction = pyqtSignal(bool)
 
 
+    setting_label_color_changed = pyqtSignal()
+
 signalBus = SignalBus()

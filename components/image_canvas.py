@@ -105,11 +105,9 @@ class PolygonsDrawImageCanvas(ImageCanvas):
             max(0, min(point.y(), self.original_pixmap_w_h.height())))
     
     def mousePressEvent(self, event): 
-        
+    
         if not self.original_pixmap:
             return
-
-        
 
         current_point = event.pos()
 
@@ -151,14 +149,16 @@ class PolygonsDrawImageCanvas(ImageCanvas):
                 return
             
             
+        if self._dragging_data_item or self._dragging_vertex:
+            return
         dm.current_item_index = -1
         dm.current_point_index = -1
 
         super().mousePressEvent(event)
 
-
     def mouseMoveEvent(self, event):
 
+    
         current_point = event.pos()
 
         original_point = self._convert_to_original_coords(current_point)
@@ -176,6 +176,10 @@ class PolygonsDrawImageCanvas(ImageCanvas):
             self._drag_frame(rotated_point)
             return
 
+
+        super().mouseMoveEvent(event)
+
+
         if dm.creating_data_item:
             dm.add_temp_frame_point(rotated_point)
             return
@@ -184,13 +188,11 @@ class PolygonsDrawImageCanvas(ImageCanvas):
             dm.add_temp_frame_point(rotated_point)
             return
 
-        super().mouseMoveEvent(event)
-
     def _drag_vertex(self, clamped_point):
-   
+
         dm.current_data_item.annotation.drag_vertex(dm.current_data_item, dm.current_point_index, clamped_point)
         
-        self.update()    
+        dm.update_data_item.emit() 
 
 
     def _drag_frame(self, clamped_point):
@@ -210,7 +212,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
             new_points.append(clamped_point)
 
         item.points = new_points
-        self.update()
+        dm.update_data_item.emit() 
 
     def get_origin_image_size(self) -> QSize:
         return self.original_pixmap_w_h

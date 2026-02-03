@@ -4,15 +4,36 @@ from PyQt5.QtCore import QPointF, Qt
 from PyQt5.QtGui import QPolygonF,QPainter,QColor,QBrush,QPen
 from abc import ABC, abstractmethod
 from common.utils import Utils
-
+from common.message import message
 class AnnotationType(Enum):
     """ 标注类型枚举 """
+    
     BBOX = "bbox" # 矩形框
     POLYGON = "polygon" # 多边形
     LINE = "line" # 线
     POINT = "point" # 点
     DEFAULT = "default" # 默认标注框
     
+    def validate_points(self, length:int) -> bool:
+
+    
+        v = AnnotationType(self.value)
+
+        if v== AnnotationType.BBOX:
+            if length != 2:
+                message.show_message_dialog("错误", "矩形框需要2个点！")
+                return False
+            
+        if v == AnnotationType.POLYGON or v == AnnotationType.DEFAULT:
+            if length < 3:
+                message.show_message_dialog("错误", "多边形框需要3个点及以上！")
+                return False
+        if  v == AnnotationType.LINE:
+            if length < 2:
+                message.show_message_dialog("错误", "直线框需要2个点及以上！")
+                return False
+        
+        return True
 
 class AnnotationFrameBase(ABC):
 
@@ -48,10 +69,7 @@ class AnnotationFrameBase(ABC):
     def check_edge_click(self, points: list[QPointF], clamped_point: QPointF,scale: float) -> int:
         return -1
 
-    # 验证标注框的点是否有效
-    def verify_points(self, length: int) -> bool:
-        return True
-    
+
     # 拖动顶点
     def drag_vertex(self, item , vertex_idx: int, clamped_point: QPointF):
         item.points[vertex_idx] = clamped_point
@@ -93,6 +111,7 @@ class PolygonAnnotation(AnnotationFrameBase):
     def draw(self, painter: QPainter, scale: float, offset: QPointF, color: QColor, func: callable = None,selected: bool = False,item_points: list[QPointF] = None):
             
             if not item_points:
+
                 points = self.all_points()
             else:
                 points = item_points
@@ -110,38 +129,26 @@ class PolygonAnnotation(AnnotationFrameBase):
             else:
                 transparent_color.setAlpha(20)
             
-
             painter.setPen(QPen(color, 2))
 
-            if self.verify_points(len(new_points)):
-                painter.setBrush(QBrush(transparent_color, Qt.SolidPattern))
-                painter.drawPolygon(QPolygonF(new_points)) # 绘制多边形
+            painter.setBrush(QBrush(transparent_color, Qt.SolidPattern))
+            painter.drawPolygon(QPolygonF(new_points)) # 绘制多边形
             
             painter.setBrush(QBrush(color, Qt.SolidPattern))
             for point in new_points:
                 painter.drawEllipse(point, 3, 3)
     
-    
-    def verify_points(self, length: int) -> bool:
-      
-        return length >= 3
-    
     def check_click(self, points: list[QPointF], clamped_point: QPointF,scale: float) -> bool:
-        
-        if not self.verify_points(len(points)):
-            return False
+    
 
         polyf = QPolygonF(points)
         if polyf.containsPoint(clamped_point, Qt.WindingFill):
             return True
         return False
-    
+
 
     def check_edge_click(self, points: list[QPointF], clamped_point: QPointF,scale: float) -> int:
-        
-        if not self.verify_points(len(points)):
-            return -1
-        
+    
         threshold = max(4,4/scale)
         min_dist = float("inf") 
 
@@ -195,22 +202,15 @@ class LineAnnotation(AnnotationFrameBase):
 
         length = len(new_points)
 
-        if self.verify_points(length):
-            for i in range(1, length):
-                painter.drawLine(new_points[i-1], new_points[i]) 
+        for i in range(1, length):
+            painter.drawLine(new_points[i-1], new_points[i]) 
         
         painter.setBrush(QBrush(color, Qt.SolidPattern))
         for point in new_points:
             painter.drawEllipse(point, 3, 3) 
         
-    def verify_points(self, length:int) -> bool:
-        
-        return length >= 2
-
     def check_click(self, points: list[QPointF], clamped_point: QPointF,scale: float) -> bool:
         
-        if not self.verify_points(len(points)):
-            return False
 
         threshold = max(6,6/scale)
         min_dist = float("inf") 
@@ -229,9 +229,6 @@ class LineAnnotation(AnnotationFrameBase):
         return False
     
     def check_edge_click(self, points: list[QPointF], clamped_point: QPointF,scale: float) -> int:
-        
-        if not self.verify_points(len(points)):
-            return -1
         
         threshold = max(6,6/scale)
         min_dist = float("inf") 
@@ -282,26 +279,16 @@ class BboxAnnotation(AnnotationFrameBase):
         
         painter.setPen(QPen(color, 2))
         
-        if self.verify_points(len(new_points)/2):
-            painter.setBrush(QBrush(transparent_color, Qt.SolidPattern))
-            painter.drawPolygon(QPolygonF(new_points)) 
+        painter.setBrush(QBrush(transparent_color, Qt.SolidPattern))
+        painter.drawPolygon(QPolygonF(new_points)) 
         
         painter.setBrush(QBrush(color, Qt.SolidPattern))
         for point in new_points:
             painter.drawEllipse(point, 3, 3)
-
-
-
-    def verify_points(self, length:int) -> bool:
-        
-        return length == 2 
-
     
 
     def check_click(self, points: list[QPointF], clamped_point: QPointF,scale: float) -> bool:
         
-        if not self.verify_points(len(points)/2):
-            return False
 
         polyf = QPolygonF(points)
         if polyf.containsPoint(clamped_point, Qt.WindingFill): # 检查点击是否在矩形框内

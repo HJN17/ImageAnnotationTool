@@ -19,7 +19,7 @@ from QtUniversalToolFrameWork.components.widgets.button import TransparentToolBu
 from QtUniversalToolFrameWork.components.widgets.label import BodyLabel,CaptionLabel
 from QtUniversalToolFrameWork.components.widgets.line_edit import LineEdit
 from QtUniversalToolFrameWork.components.dialog_box import ColorDialog
-
+from common.signal_bus import signalBus 
 
 from common.case_label import cl
 from common.utils import Utils
@@ -73,8 +73,6 @@ class AddLabelMessageBox(CustomMessageBoxBase):
 class LabelItem(QWidget):
 
     removed = pyqtSignal(QWidget)
-
-    colorChanged = pyqtSignal()
 
     def __init__(self, label_name: str,color:QColor, parent=None):
         super().__init__(parent=parent)
@@ -140,7 +138,7 @@ class LabelItem(QWidget):
         self._color = color
         self._colorButton.setColor(self._color)
         cl._set_color(self._label_name, self._color)
-        self.colorChanged.emit()
+        signalBus.setting_label_color_changed.emit()
 
 class LabelListSettingCard(ExpandSettingCard):
     """ 标签列表设置卡片    """
@@ -183,7 +181,7 @@ class LabelListSettingCard(ExpandSettingCard):
 
         item = LabelItem(label, color, self.view)
         item.removed.connect(self._removeLabel)
-        item.colorChanged.connect(self._set_label_colors)
+        signalBus.setting_label_color_changed.connect(self._set_label_colors)
         self.viewLayout.addWidget(item)
         item.show()
         self._adjustViewSize()
@@ -209,7 +207,6 @@ class LabelListSettingCard(ExpandSettingCard):
         qconfig.set(self.labelConfigItem, labels)
         qconfig.set(self.labelColorConfigItem, colors)
 
-        
     def _removeLabel(self, item: LabelItem):
 
         if item.label_name not in cl.get_all_labels():

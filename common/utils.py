@@ -3,7 +3,12 @@ from typing import List, Optional
 from PyQt5.QtGui import QColor, QGuiApplication
 from PyQt5.QtCore import QPointF
 import math
+
+
 class Utils:
+
+    
+
 
     @staticmethod
     def get_rectangle_points(points: list[QPointF]): # 计算矩形的四个顶点

@@ -14,7 +14,7 @@ from common.utils import Utils
 
 
 class AttributeType(Enum):
-
+    
     OPTION = "选项框"
     INPUT = "输入框"
 
@@ -62,7 +62,7 @@ class CaseAttribute(QObject):
         self._items.clear()
 
         temp_items = []
-
+        name_list= {}
         for item in items:
             
             if item.get("attr_name") is None:
@@ -87,10 +87,21 @@ class CaseAttribute(QObject):
 
             if type == AttributeType.OPTION:
                 temp_dict["attr_value"] = item.get("attr_value")
-           
+
+            if show_msg:
+                if item.get("label_name") in name_list.keys():
+                    if name_list[item.get("label_name")] == item.get("attr_name"):
+                        message.show_message_dialog("异常",f"{item.get('label_name')}的{item.get('attr_name')}属性名称重复！")
+                        return
+                
+                name_list[item.get("label_name")] = item.get("attr_name")
 
             temp_items.append(temp_dict)
             
+
+        
+
+
         if show_msg:
             message.show_success_message("提示",f"属性设置成功😄")
         

@@ -216,6 +216,8 @@ class AttributeItem(QWidget):
         
         self._closeButton.clicked.connect(lambda: self.removed.emit(self))
 
+        signalBus.setting_label_color_changed.connect(self._set_label_name_color)
+
         self._show_by_type(self.attr_type)
 
         self._init_ui()
@@ -251,6 +253,12 @@ class AttributeItem(QWidget):
         hBoxLayout.addStretch(1)
         hBoxLayout.addWidget(self._closeButton, 0, Qt.AlignRight)
         hBoxLayout.setAlignment(Qt.AlignVCenter)
+
+
+    def _set_label_name_color(self):
+        color = cl.get_color(self.label_name)
+        self._label.setTextColor(color, color)
+        self._label.update()
 
     def _set_attr_name(self,attr_name: str):
         self.attr_name = attr_name

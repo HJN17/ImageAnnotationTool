@@ -112,6 +112,8 @@ class InfoCardItem(QWidget):
         self._label_comboBox.currentTextChanged.connect(lambda text: self._set_case_label(text))
         self._label_comboBox.currentTextChanged.connect(self.update)
 
+        self._delButton.clicked.connect(dm.delete_current_item)
+
         self._init_ui()
     
     def _init_ui(self):
@@ -302,6 +304,9 @@ class InfoCardInterface(ScrollArea):
         self.all_hide()
 
         if data_item is None:
+            return
+        
+        if not cl.is_show(data_item.caseLabel):
             return
 
         widget = InfoCardItem(data_item, self.scrollWidget)

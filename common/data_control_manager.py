@@ -9,7 +9,6 @@ from QtUniversalToolFrameWork.common.style_sheet import themeColor
 
 
 from common.data_structure import DataItemInfo
-from common.signal_bus import signalBus
 from common.case_label import cl
 from common.polygon_clip import polygon_clipper
 from common.key_manager import keyManager
@@ -17,7 +16,6 @@ from common.key_manager import keyManager
 from common.annotation import AnnotationFrameBase,AnnotationType
 from common.utils import Utils
 from common.message import message
-from common.case_attrbute import cattr
 
 
 class DataManager(QObject):
@@ -131,6 +129,11 @@ class DataManager(QObject):
         return self.data_items[self.current_item_index].caseLabel
         
 
+
+    
+
+  
+
     def is_current_item_valid(self):
         return self.data_items and self.current_item_index >= 0 and self.current_item_index < len(self.data_items)
 
@@ -140,6 +143,8 @@ class DataManager(QObject):
         self.current_point_index = -1
         self.update_data_item.emit()
         message.show_success_message("提示", "添加标注框成功！")
+
+
 
     def delete_item(self, index: int):
         
@@ -159,6 +164,10 @@ class DataManager(QObject):
 
         self.update_data_item.emit()
 
+
+    def delete_current_item(self):
+        self.delete_item(self.current_item_index)
+
     def delete_current_point(self):
 
         if not self.is_current_item_valid():
@@ -171,7 +180,7 @@ class DataManager(QObject):
             return 
         
         
-        if not item.annotation.verify_points(len(item.points)-1):
+        if not item.annotation_type.validate_points(len(item.points)-1):
             message.show_error_message("错误", "删除点失败，点数量不符合要求！")
             return 
         
@@ -421,28 +430,35 @@ class DataManager(QObject):
         points = self.annotion_frame.points
 
         self.creating_data_item = False
+
         
+
+    
         clipped_points = polygon_clipper.clip_polygon_to_image(points, image_size)
         
+
         if clipped_points is None:
             return
 
-
         if self.annotion_frame.annotation_type == AnnotationType.BBOX:
-            points = Utils.get_rectangle_vertices(points)
-            if not points:
+            clipped_points = Utils.get_rectangle_vertices(clipped_points)
+            if not clipped_points:
                 message.show_error_message("错误", "无法计算矩形顶点！")
                 return
+
+        if not self.annotion_frame.annotation_type.validate_points(len(clipped_points)):
+            return
 
         data_item = DataItemInfo(
             id=str(uuid.uuid4()),
             annotation_type=self.annotion_frame.annotation_type,
             caseLabel="default",
             attributes=[],
-            points=points
+            points=clipped_points
         )
         
         self.add_item(data_item)
+
 
 
 dm = DataManager()

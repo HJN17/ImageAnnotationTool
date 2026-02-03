@@ -206,6 +206,8 @@ class AccuracyInterface(QWidget):
         self._image_manager.item_inserted.connect(self._set_progress_range)
         self._image_manager.model_reset.connect(self._set_progress_range)
 
+        dm.update_data_item.connect(self._save_annotations)
+
         keyManager.N.connect(self._on_n_pressed)
         keyManager.S.connect(self._on_s_pressed)
         keyManager.X.connect(self._on_x_pressed)
@@ -249,7 +251,7 @@ class AccuracyInterface(QWidget):
         w.setFixedWidth(310)
 
         toolBarLayout.addWidget(self._commandBar1,0,Qt.AlignLeft)
-        toolBarLayout.addWidget(self._commandBar2,1,Qt.AlignHCenter)
+        toolBarLayout.addWidget(self._commandBar2,1,Qt.AlignHCenter|Qt.AlignLeft)
         toolBarLayout.addWidget(self.helpButton,0,Qt.AlignRight)
         toolBarLayout.addWidget(self.sourceButton,0,Qt.AlignRight)
     
@@ -306,7 +308,7 @@ class AccuracyInterface(QWidget):
 
             bar2.addActions([
                 Action(FIF.SEARCH,triggered=self._on_search_clicked)
-,
+
             ])
 
             bar2.addSeparator()
@@ -462,14 +464,12 @@ class AccuracyInterface(QWidget):
             self._image_canvas.setCursor(Qt.ArrowCursor)
 
     def _on_x_pressed(self, pressed):
-
         if pressed:
             dm.delete_current_point()
     
     def _on_b_pressed(self, pressed):
-
         if pressed:
-            signalBus.deleteItem.emit(dm.current_data_item._id)
+            dm.delete_current_item()
 
     def _on_n_pressed(self, pressed):
 
@@ -478,7 +478,6 @@ class AccuracyInterface(QWidget):
 
                 self._image_canvas.setMouseTracking(False)
                 self._image_canvas.setCursor(Qt.ArrowCursor)
-
                 dm.finish_create(self._image_canvas.get_origin_image_size())
             else:
                 dm.creating_data_item = True
