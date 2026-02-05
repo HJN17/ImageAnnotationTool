@@ -7,7 +7,6 @@ from common.utils import Utils
 from common.message import message
 class AnnotationType(Enum):
     """ 标注类型枚举 """
-    
     BBOX = "bbox" # 矩形框
     POLYGON = "polygon" # 多边形
     LINE = "line" # 线

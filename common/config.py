@@ -6,8 +6,6 @@ from QtUniversalToolFrameWork.common.config import qconfig,ConfigItem,ConfigVali
 from QtUniversalToolFrameWork.common.color import themeColor
 from common.utils import Utils
 
-
-
 class LabelListValidator(ConfigValidator):
     """ 标签列表验证器：验证列表中的所有路径是否存在，并过滤无效路径 """
 

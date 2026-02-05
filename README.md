@@ -22,7 +22,7 @@
 ### 环境要求
 - Python 3.6+
 - Windows/Linux兼容（推荐Windows 10+、Ubuntu 20.04+）
-
+- 组件库地址：[QtUniversalToolFrameWork](https://github.com/HJN17/QtUniversalToolFrameWork)
 ### 安装步骤
 ```bash
 # 克隆项目（替换<仓库地址>为实际仓库链接）

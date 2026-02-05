@@ -159,7 +159,7 @@ class AccuracyInterface(QWidget):
     """OCR精度调整工具模块，用于调整OCR识别区域的多边形标注"""
 
     CACHE_CAPACITY = 50
-    EXAMPLE_URL = "https://gitcode.com/HJN17/ImageAnnotationTool"
+    EXAMPLE_URL = "https://github.com/HJN17/ImageAnnotationTool"
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -230,7 +230,6 @@ class AccuracyInterface(QWidget):
         mainLayout.setContentsMargins(0, 0, 0, 0)
         mainLayout.setSpacing(0)
 
-
         view = QFrame(self)
         vBoxLayout = QVBoxLayout(view)
         vBoxLayout.setContentsMargins(10, 10, 10, 0)
@@ -245,7 +244,6 @@ class AccuracyInterface(QWidget):
 
         self._progress_widget.set_slider_width(200)
         self._image_name_label.setContentsMargins(20, 0, 0, 0)
-
 
         w = QWidget(self)
         w.setFixedWidth(310)
