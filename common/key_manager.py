@@ -9,6 +9,7 @@ class KeyManager(QObject):
     S= pyqtSignal(bool)
     X= pyqtSignal(bool)
     B= pyqtSignal(bool)
+    SPACE= pyqtSignal(bool)
 
     _INSTANCE = None 
     _INSTANCE_INIT = False 
@@ -32,6 +33,8 @@ class KeyManager(QObject):
             Qt.Key_S: self.S,
             Qt.Key_X: self.X,
             Qt.Key_B: self.B,
+            Qt.Key_Space: self.SPACE,
+
         }
 
     def release_all_keys(self):

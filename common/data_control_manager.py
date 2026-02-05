@@ -431,9 +431,6 @@ class DataManager(QObject):
 
         self.creating_data_item = False
 
-        
-
-    
         clipped_points = polygon_clipper.clip_polygon_to_image(points, image_size)
         
 
@@ -444,6 +441,8 @@ class DataManager(QObject):
             clipped_points = Utils.get_rectangle_vertices(clipped_points)
             if not clipped_points:
                 message.show_error_message("错误", "无法计算矩形顶点！")
+                self.update_data_item.emit()
+
                 return
 
         if not self.annotion_frame.annotation_type.validate_points(len(clipped_points)):

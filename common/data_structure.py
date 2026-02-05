@@ -200,7 +200,7 @@ class  DataInfo:
 
 class JsonFileManager:
 
-    DELAY_WRITE_MS = 500
+    DELAY_WRITE_MS = 500 # 写入延迟_ms（避免频繁写入）
     MAX_RETRY = 5   # 最大重试次数
     RETRY_INTERVAL = 0.01
 
@@ -271,7 +271,7 @@ class JsonFileManager:
 
         return len(json.dumps(data_info.to_dict()))
 
-    def _cache_cleanup(self):
+    def _cache_cleanup(self): # 缓存清理（内部方法，加锁）
         with self._cache_lock:
 
             now = time.time()
@@ -318,12 +318,12 @@ class JsonFileManager:
                 return
 
 
-            self._json_cache[json_path] = (deepcopy(data_info), time.time(), time.time())
+            self._json_cache[json_path] = (deepcopy(data_info), time.time(), time.time()) # 更新缓存：(数据副本, 修改时间, 最后访问时间)
            
             if json_path in self._write_timers: 
                 self._write_timers[json_path].cancel() 
 
-            timer = threading.Timer(self.DELAY_WRITE_MS / 1000, self._atomic_save_json, args=(json_path, data_info))
+            timer = threading.Timer(self.DELAY_WRITE_MS / 1000, self._atomic_save_json, args=(json_path, data_info)) # 设置写入定时器
             self._write_timers[json_path] = timer
             timer.start()
         

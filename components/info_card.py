@@ -113,7 +113,7 @@ class InfoCardItem(QWidget):
         self._label_comboBox.currentTextChanged.connect(self.update)
 
         self._delButton.clicked.connect(dm.delete_current_item)
-
+        
         self._init_ui()
     
     def _init_ui(self):

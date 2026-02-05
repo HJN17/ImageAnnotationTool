@@ -154,11 +154,10 @@ class DataLoadThread(QThread):
     def stop(self):
         self._stop_event.set()
 
-
 class AccuracyInterface(QWidget):
     """OCR精度调整工具模块，用于调整OCR识别区域的多边形标注"""
 
-    CACHE_CAPACITY = 50
+    CACHE_CAPACITY = 5
     EXAMPLE_URL = "https://github.com/HJN17/ImageAnnotationTool"
     
     def __init__(self, parent=None):
@@ -190,7 +189,6 @@ class AccuracyInterface(QWidget):
 
         self._commandBar1, self._commandBar2 = self.createCommandBar()
 
-
         self._current_dir = ""
         self._load_thread = None
 
@@ -213,6 +211,7 @@ class AccuracyInterface(QWidget):
         keyManager.X.connect(self._on_x_pressed)
         keyManager.B.connect(self._on_b_pressed)
         keyManager.SHIFT.connect(self._on_shift_pressed)
+        keyManager.SPACE.connect(self._on_space_pressed)
 
         signalBus.annotationTypeChanged.connect(self._annotation_type_changed)
         signalBus.splitPolygonFunction.connect(self._on_s_pressed)
@@ -242,7 +241,7 @@ class AccuracyInterface(QWidget):
         toolBarLayout = QHBoxLayout()
         toolBarLayout.setContentsMargins(5, 10, 0, 10)
 
-        self._progress_widget.set_slider_width(200)
+        #self._progress_widget.set_slider_width(200)
         self._image_name_label.setContentsMargins(20, 0, 0, 0)
 
         w = QWidget(self)
@@ -255,7 +254,6 @@ class AccuracyInterface(QWidget):
     
         hBoxLayout.addWidget(self._image_canvas,1)
         hBoxLayout.addWidget(self._pivot_stacked,0)
-
 
         vBoxLayout.addWidget(self._title_toolbar,0,Qt.AlignLeft)
         vBoxLayout.addLayout(toolBarLayout)
@@ -449,6 +447,11 @@ class AccuracyInterface(QWidget):
         dm.data_info = DataInfo(file_name=image_name, items=[])
         dm.init_vars()
 
+
+    def _on_space_pressed(self, pressed):
+        if pressed:
+            #重置画布位置
+            self._image_canvas.center_image()
 
     
         
