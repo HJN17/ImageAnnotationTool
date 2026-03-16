@@ -46,6 +46,9 @@ class AnnotationFrameBase(ABC):
     def points(self) -> list[QPointF]:
         return self._points
 
+    @property
+    def temp_point(self) -> QPointF:
+        return self._temp_point
     
     def all_points(self) -> list[QPointF]:
         return self._points + [self._temp_point] if self._temp_point else self._points
@@ -169,7 +172,6 @@ class PolygonAnnotation(AnnotationFrameBase):
 @AnnotationFrameBase.register(AnnotationType.LINE)
 class LineAnnotation(AnnotationFrameBase):
 
-
     def __init__(self,annotation_type: AnnotationType = AnnotationType.DEFAULT,**kwargs):
         super().__init__(**kwargs)
         self.annotation_type = annotation_type
@@ -180,8 +182,6 @@ class LineAnnotation(AnnotationFrameBase):
             points = self.all_points()
         else:
             points = item_points
-
-
        
 
         rotated_points = [func(point) for point in points]

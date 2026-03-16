@@ -180,7 +180,9 @@ class InfoCardItem(QWidget):
                     attr_name = attr["attr_name"]
                     if self._data.is_attribute_exist(attr_name):
                         temp_attr_value.setText(self._data.get_attribute_value(attr_name))
-
+                    else:
+                        dm.set_current_attribute(attr_name, "")
+                        
                     temp_attr_value.textChanged.connect(
                         lambda text, name=attr_name: dm.set_current_attribute(name, text)
                     )

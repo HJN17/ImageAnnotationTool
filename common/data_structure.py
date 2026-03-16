@@ -97,6 +97,9 @@ class DataItemInfo:
 
 
     def is_attribute_exist(self, attr_name : str) -> bool:
+        """
+        判断属性是否存在
+        """
         for attr in self._attributes:
             if attr["attr_name"] == attr_name:
                 return True

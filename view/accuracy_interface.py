@@ -92,6 +92,7 @@ class HelpMessageBox(CustomMessageBoxBase):
         self.add_body_text("ESC键","取消所有操作")
         self.add_body_text("N键开始","新建标注框")
         self.add_body_text("N键结束","完成标注框")
+        self.add_body_text("SPACE键","重置布局")
         self.add_body_text("B键","删除选中的标注框")
         self.add_body_text("W健","切换多边形显示/隐藏")
         self.add_body_text("S键","分割多边形标注框")
@@ -385,12 +386,15 @@ class AccuracyInterface(QWidget):
         except Exception as e:
             message.show_error_message("错误", f"加载标注文件失败：{e}")
             return
-
+        
         dm.data_info = di
 
         self._on_show_annotations_toggled()
 
     def _save_annotations(self):
+        
+        if dm.data_items is None or len(dm.data_items) == 0:
+            return
         
         name = self._image_manager.current_item
         dm.data_info.file_name = os.path.basename(name)
@@ -482,13 +486,13 @@ class AccuracyInterface(QWidget):
                 dm.finish_create(self._image_canvas.get_origin_image_size())
             else:
                 dm.creating_data_item = True
-                dm.annotion_frame = AnnotationFrameBase.create(self._annotation_type)
+                dm.annotation_frame = AnnotationFrameBase.create(self._annotation_type)
                 self._image_canvas.setMouseTracking(True)
                 self._image_canvas.setCursor(Qt.BlankCursor) # 隐藏鼠标光标
                 
         elif dm.creating_data_item:
             dm.creating_data_item = False
-            dm.annotion_frame = None
+            dm.annotation_frame = None
             self._image_canvas.setMouseTracking(False)
             self._image_canvas.setCursor(Qt.ArrowCursor)
             self._image_canvas.update()
@@ -498,7 +502,7 @@ class AccuracyInterface(QWidget):
         if pressed:
             dm.creating_split_vertex = True
             dm.split_item_index = -1
-            dm.annotion_frame = AnnotationFrameBase.create(AnnotationType.LINE)
+            dm.annotation_frame = AnnotationFrameBase.create(AnnotationType.LINE)
 
 
             self._image_canvas.setMouseTracking(True)
@@ -507,7 +511,7 @@ class AccuracyInterface(QWidget):
         elif dm.creating_split_vertex:
             dm.creating_split_vertex = False
             dm.split_item_index = -1
-            dm.annotion_frame = None
+            dm.annotation_frame = None
             self._image_canvas.setMouseTracking(False)
             self._image_canvas.setCursor(Qt.ArrowCursor)
             self._image_canvas.update()

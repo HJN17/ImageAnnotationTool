@@ -63,7 +63,7 @@ class DataManager(QObject):
         self.creating_split_vertex = False # 是否正在创建分割点
         self.creating_vertex_pressed = False # 是否正在创建顶点
 
-        self.annotion_frame = None # 当前正在编辑的AnnotationFrame
+        self.annotation_frame = None # 当前正在编辑的AnnotationFrame
 
         self.update_data_item.emit()
 
@@ -207,13 +207,15 @@ class DataManager(QObject):
     def temp_frame_draw(self, painter: QPainter, offset: QPointF,func: callable = None):
 
         if self.creating_data_item:
-            self.annotion_frame.draw(painter, self.scale, offset, themeColor(), func,True)
+            self.annotation_frame.draw(painter, self.scale, offset, themeColor(), func,True)
             return
         
         if self.creating_split_vertex:
             label = self.get_current_item_label()
-            self.annotion_frame.draw(painter, self.scale, offset, cl.get_color(label), func,True)
+            self.annotation_frame.draw(painter, self.scale, offset, cl.get_color(label), func,True)
             return
+        
+        
 
 
     def check_edge_click(self,clamped_point:QPointF) -> tuple[bool,int,int]:
@@ -285,13 +287,13 @@ class DataManager(QObject):
 
     def add_create_vertex(self, point: QPointF):
         """添加创建DataItem的顶点"""
-        self.annotion_frame.set_point(point)
+        self.annotation_frame.set_point(point)
         self.update_data_item.emit()
 
     def add_split_vertex(self, clamped_point):
 
         def reset_split_state():
-            self.annotion_frame = AnnotationFrameBase.create(AnnotationType.LINE)
+            self.annotation_frame = AnnotationFrameBase.create(AnnotationType.LINE)
             self.split_point_index_start = -1
             self.split_point_index_end = -1
             self.split_item_index = -1
@@ -316,32 +318,32 @@ class DataManager(QObject):
                 self.split_point_index_start = best_edge_idx
                 self.split_item_index = item_idx
                 self.current_item_index = item_idx
-                self.annotion_frame.set_point(closest_point)
+                self.annotation_frame.set_point(closest_point)
         
         else:
             is_click,_ = self.check_frame_click(clamped_point,self.split_item_index)
 
             if not is_click:
-                best_edge_idx,closest_point = Utils.get_intersection_point(self.get_current_item_points(self.split_item_index), self.annotion_frame.points[-1], clamped_point)
+                best_edge_idx,closest_point = Utils.get_intersection_point(self.get_current_item_points(self.split_item_index), self.annotation_frame.points[-1], clamped_point)
                 if closest_point is None:
                     message.show_error_message("错误", "未找到与分割线相交的点！")
                     keyManager.release_all_keys()
                     return
                 else:
                     self.split_point_index_end = best_edge_idx
-                    self.annotion_frame.set_point(closest_point)
+                    self.annotation_frame.set_point(closest_point)
 
                 self.finish_split()
 
             else:
-                self.annotion_frame.set_point(clamped_point)
+                self.annotation_frame.set_point(clamped_point)
         
         self.update_data_item.emit()
 
 
     def add_temp_frame_point(self, clamped_point):
         """添加临时多边形顶点"""
-        self.annotion_frame.set_temp_point(clamped_point) 
+        self.annotation_frame.set_temp_point(clamped_point) 
         self.update_data_item.emit()
 
 
@@ -359,7 +361,7 @@ class DataManager(QObject):
         if self.split_point_index_start > self.split_point_index_end:
 
             item_data_1.extend(points[0:self.split_point_index_end])
-            item_data_1.extend(self.annotion_frame.points[::-1])
+            item_data_1.extend(self.annotation_frame.points[::-1])
             item_data_1.extend(points[self.split_point_index_start:])
 
         elif self.split_point_index_start == self.split_point_index_end:
@@ -367,33 +369,33 @@ class DataManager(QObject):
             item_data_1.extend(points[0:self.split_point_index_end])
 
 
-            if Utils.compare_points_on_line(self.annotion_frame.points[0],self.annotion_frame.points[-1],
+            if Utils.compare_points_on_line(self.annotation_frame.points[0],self.annotation_frame.points[-1],
                                             points[self.split_point_index_end-1],points[self.split_point_index_end if self.split_point_index_end < len(points)-1 else 0])==-1:
 
-                item_data_1.extend(self.annotion_frame.points)
+                item_data_1.extend(self.annotation_frame.points)
             else:
-                item_data_1.extend(self.annotion_frame.points[::-1])
+                item_data_1.extend(self.annotation_frame.points[::-1])
 
             item_data_1.extend(points[self.split_point_index_end:])
         else :
              item_data_1.extend(points[0:self.split_point_index_start])
-             item_data_1.extend(self.annotion_frame.points)
+             item_data_1.extend(self.annotation_frame.points)
              item_data_1.extend(points[self.split_point_index_end:])
 
         
         # 分割点在多边形内部
         if self.split_point_index_start > self.split_point_index_end:
-            item_data_2.extend(self.annotion_frame.points)
+            item_data_2.extend(self.annotation_frame.points)
             item_data_2.extend(points[self.split_point_index_end:self.split_point_index_start])
         elif self.split_point_index_start == self.split_point_index_end:
-            item_data_2 = self.annotion_frame.points
+            item_data_2 = self.annotation_frame.points
         else:
-            item_data_2.extend(self.annotion_frame.points[::-1])
+            item_data_2.extend(self.annotation_frame.points[::-1])
             item_data_2.extend(points[self.split_point_index_start:self.split_point_index_end])
 
 
         self.creating_split_vertex = False
-        self.annotion_frame = None 
+        self.annotation_frame = None 
 
         if not item_data_1 or not item_data_2:
             message.show_error_message("错误", "分割点在多边形内部或外部异常！")
@@ -424,10 +426,10 @@ class DataManager(QObject):
 
     def finish_create(self,image_size: QSize):
 
-        if not self.annotion_frame:
+        if not self.annotation_frame:
             return
         
-        points = self.annotion_frame.points
+        points = self.annotation_frame.points
 
         self.creating_data_item = False
 
@@ -437,7 +439,7 @@ class DataManager(QObject):
         if clipped_points is None:
             return
 
-        if self.annotion_frame.annotation_type == AnnotationType.BBOX:
+        if self.annotation_frame.annotation_type == AnnotationType.BBOX:
             clipped_points = Utils.get_rectangle_vertices(clipped_points)
             if not clipped_points:
                 message.show_error_message("错误", "无法计算矩形顶点！")
@@ -445,12 +447,12 @@ class DataManager(QObject):
 
                 return
 
-        if not self.annotion_frame.annotation_type.validate_points(len(clipped_points)):
+        if not self.annotation_frame.annotation_type.validate_points(len(clipped_points)):
             return
 
         data_item = DataItemInfo(
             id=str(uuid.uuid4()),
-            annotation_type=self.annotion_frame.annotation_type,
+            annotation_type=self.annotation_frame.annotation_type,
             caseLabel="default",
             attributes=[],
             points=clipped_points

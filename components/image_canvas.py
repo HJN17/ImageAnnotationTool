@@ -1,12 +1,14 @@
 # coding: utf-8
 
-from PyQt5.QtGui import QPainter
+from PyQt5.QtGui import QPainter,QPen,QColor
 from PyQt5.QtCore import Qt, QSize, pyqtSignal, QPointF,pyqtSlot
 
 from QtUniversalToolFrameWork.components.widgets.image_canvas import ImageCanvas
-
+from QtUniversalToolFrameWork.common.style_sheet import themeColor
 from common.case_label import cl
-from common.data_control_manager import dm
+from common.data_control_manager import dm,AnnotationType
+
+
 
 class PolygonsDrawImageCanvas(ImageCanvas):
 
@@ -15,6 +17,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         super().__init__(parent)
         self.parent = parent
         self._scale = 1.0
+        self._helper_point = None
         self._dragging_vertex = False
         self._dragging_data_item = False # 是否正在拖动DataItem
         self._drag_start_pos = QPointF() # 拖动开始位置
@@ -32,6 +35,7 @@ class PolygonsDrawImageCanvas(ImageCanvas):
     def _update_scale(self, scale: float):
         dm.scale = scale
 
+
     def paintEvent(self, event):
 
         super().paintEvent(event)
@@ -41,6 +45,9 @@ class PolygonsDrawImageCanvas(ImageCanvas):
         painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
         painter.setRenderHint(QPainter.TextAntialiasing, True)
         painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
+        
+    
+        self.draw_bbox_helper(painter)
         
         dm.draw(painter, self.offset,self._rotate_point)
         
@@ -158,7 +165,6 @@ class PolygonsDrawImageCanvas(ImageCanvas):
 
     def mouseMoveEvent(self, event):
 
-    
         current_point = event.pos()
 
         original_point = self._convert_to_original_coords(current_point)
@@ -181,12 +187,34 @@ class PolygonsDrawImageCanvas(ImageCanvas):
 
 
         if dm.creating_data_item:
+            self._helper_point = current_point
             dm.add_temp_frame_point(rotated_point)
             return
         
         if dm.creating_split_vertex and dm.split_item_index != -1:
             dm.add_temp_frame_point(rotated_point)
             return
+
+
+    def draw_bbox_helper(self,painter: QPainter):
+        """绘制BBOX辅助线：鼠标位置的水平/垂直十字贯穿线"""
+        # 非BBOX标注类型，直接返回（修复拼写错误annotion→annotation）
+
+        if not dm.creating_data_item or self._helper_point is None:
+            return
+
+        if dm.annotation_frame.annotation_type != AnnotationType.BBOX:
+            return
+
+        line_color = themeColor()
+        line_color.setAlpha(200)
+
+        pen = QPen(line_color, 0.5, Qt.SolidLine)
+        painter.setPen(pen)
+
+        painter.drawLine(QPointF(0, self._helper_point.y()), QPointF(self.width(), self._helper_point.y()))
+        painter.drawLine(QPointF(self._helper_point.x(), 0), QPointF(self._helper_point.x(), self.height()))
+
 
     def _drag_vertex(self, clamped_point):
 
