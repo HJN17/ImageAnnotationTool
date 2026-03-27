@@ -26,6 +26,8 @@ from common.signal_bus import signalBus
 from common.case_attrbute import cattr,AttributeType
 from common.message import message
 
+
+
 class AttributeMessageBox(CustomMessageBoxBase):
     """ 属性列表设置消息框 """
 
